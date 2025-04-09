@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788" systemVersion="24E248" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="Artifact" representedClassName="Artifact" syncable="YES" codeGenerationType="class">
+        <attribute name="acquisitionCondition" optional="YES" attributeType="String"/>
+        <attribute name="desc" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="imageName" optional="YES" attributeType="String"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="rarity" attributeType="String"/>
+        <attribute name="statBoostType" optional="YES" attributeType="String"/>
+        <attribute name="statBoostValue" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <relationship name="userInstances" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UserArtifact" inverseName="artifact" inverseEntity="UserArtifact"/>
+    </entity>
     <entity name="GateStatus" representedClassName="GateStatus" syncable="YES" codeGenerationType="class">
         <attribute name="clearConditionDescription" optional="YES" attributeType="String"/>
         <attribute name="gateRank" optional="YES" attributeType="String"/>
@@ -28,6 +39,13 @@
         <attribute name="completionDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="habitID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
     </entity>
+    <entity name="UserArtifact" representedClassName="UserArtifact" syncable="YES" codeGenerationType="class">
+        <attribute name="acquiredDate" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isEquipped" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <relationship name="artifact" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Artifact" inverseName="userInstances" inverseEntity="Artifact"/>
+        <relationship name="profile" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="UserProfile" inverseName="artifacts" inverseEntity="UserProfile"/>
+    </entity>
     <entity name="UserProfile" representedClassName="UserProfile" syncable="YES" codeGenerationType="class">
         <attribute name="essenceCoreState" optional="YES" attributeType="String"/>
         <attribute name="job" optional="YES" attributeType="String"/>
@@ -37,5 +55,6 @@
         <attribute name="title" optional="YES" attributeType="String"/>
         <attribute name="totalManaSpent" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="xp" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="artifacts" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="UserArtifact" inverseName="profile" inverseEntity="UserArtifact"/>
     </entity>
 </model>

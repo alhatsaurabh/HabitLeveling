@@ -1,51 +1,113 @@
-// --- Habit Row View (HabitRowView.swift) ---
-// Reusable view for displaying a single habit, especially on the dashboard.
-struct HabitRowView: View {
-    // Use @ObservedObject for objects passed into the view
-    @ObservedObject var habit: Habit
-    var onComplete: (Habit) -> Void // Closure to call when checkmark is tapped
+// MARK: - File: HabitRowView.swift
+// Purpose: Displays a single habit row with completion interaction.
+// Update: Added panel styling (background, corner radius, padding).
 
-    // State to manage completion visual feedback (optional)
-    @State private var recentlyCompleted = false
+import SwiftUI
+import CoreData
+
+struct HabitRowView: View {
+    @ObservedObject var habit: Habit
+    var onComplete: (Habit) -> Void
+    @State private var isCompletedToday = false
+    let themeAccentColor = ThemeColors.primaryAccent
+    let streakColor = ThemeColors.warning
+
+    // Define background color for the row panel
+    let panelBackgroundColor = ThemeColors.panelBackground // Use the standard panel background
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text(habit.name ?? "Unnamed Habit")
+        HStack(spacing: 16) {
+            // Left side: Quest name and XP
+            VStack(alignment: .leading, spacing: 4) {
+                Text(habit.name ?? "Unnamed Quest")
                     .font(.headline)
-                    // Basic visual cue for completed state
-                    .strikethrough(recentlyCompleted, color: .gray)
-                    .opacity(recentlyCompleted ? 0.6 : 1.0)
-
-                // Add more details if needed (e.g., category, XP)
-                Text("XP: \(habit.xpValue) | Streak: \(habit.streak)")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(ThemeColors.primaryText)
+                    .strikethrough(isCompletedToday)
+                    .opacity(isCompletedToday ? 0.6 : 1.0)
+                
+                Text("XP: \(habit.xpValue)")
+                    .font(.subheadline)
+                    .foregroundColor(ThemeColors.secondaryText)
             }
-
-            Spacer() // Pushes checkmark to the right
-
-            Image(systemName: recentlyCompleted ? "checkmark.circle.fill" : "circle")
-                .foregroundColor(recentlyCompleted ? .green : .cyan) // Use theme color
-                .imageScale(.large)
-                .onTapGesture {
-                    if !recentlyCompleted { // Prevent multiple completions visually
-                        onComplete(habit)
-                        // Provide immediate visual feedback
-                        withAnimation(.easeOut(duration: 0.2)) {
-                             recentlyCompleted = true
-                        }
-                         // Optional: Reset visual state after a delay if needed for daily reset
-                         // DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                         //     withAnimation { recentlyCompleted = false }
-                         // }
+            
+            Spacer()
+            
+            // Right side: Completion circle
+            Button(action: {
+                if !isCompletedToday {
+                    onComplete(habit)
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        isCompletedToday = true
                     }
                 }
+            }) {
+                Circle()
+                    .stroke(isCompletedToday ? ThemeColors.success : ThemeColors.primaryAccent, lineWidth: 2)
+                    .frame(width: 24, height: 24)
+                    .overlay(
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(isCompletedToday ? ThemeColors.success : Color.clear)
+                    )
+            }
         }
-         // Apply padding within the row
-        .padding(.vertical, 4)
-        // Basic styling for the row
-        .background(Color.black.opacity(0.01)) // Ensure taps are registered
+        .padding()
+        .background(ThemeColors.panelBackground.opacity(0.3))
+        .cornerRadius(12)
+        .onAppear {
+            updateCompletionStatus()
+        }
+        .onChange(of: habit.lastCompletedDate) { _, _ in
+            updateCompletionStatus()
+        }
+    }
+    
+    private func updateCompletionStatus() {
+        if let lastDate = habit.lastCompletedDate, Calendar.current.isDateInToday(lastDate) {
+            if !isCompletedToday { isCompletedToday = true }
+        } else {
+            if isCompletedToday { isCompletedToday = false }
+        }
     }
 }
 
+// MARK: - Preview Provider (Example)
+struct HabitRowView_Previews: PreviewProvider {
+    // Mock ThemeColors for preview
+    struct PreviewThemeColors {
+        static let background = Color(red: 0.05, green: 0.05, blue: 0.1)
+        static let primaryText = Color.white
+        static let secondaryText = Color.gray
+        static let panelBackground = Color(red: 0.15, green: 0.15, blue: 0.22) // Example panel color
+        static let primaryAccent = Color.cyan
+        static let success = Color.green
+        static let warning = Color.orange
+    }
+    static let ThemeColors = PreviewThemeColors.self
+
+    static var previews: some View {
+        let context = PersistenceController.preview.container.viewContext
+        let habit1 = Habit(context: context)
+        habit1.id = UUID()
+        habit1.name = "Daily Run"
+        habit1.xpValue = 15
+        habit1.streak = 5
+        habit1.lastCompletedDate = Calendar.current.date(byAdding: .day, value: -1, to: Date()) // Not completed today
+
+        let habit2 = Habit(context: context)
+        habit2.id = UUID()
+        habit2.name = "Read Chapter"
+        habit2.xpValue = 10
+        habit2.streak = 12
+        habit2.lastCompletedDate = Date() // Completed today
+
+        return VStack {
+            HabitRowView(habit: habit1) { _ in print("Complete Tapped") }
+            HabitRowView(habit: habit2) { _ in print("Complete Tapped") }
+        }
+        .padding()
+        .background(ThemeColors.background)
+        .preferredColorScheme(.dark)
+
+    }
+}

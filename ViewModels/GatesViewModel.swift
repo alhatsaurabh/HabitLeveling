@@ -1,34 +1,88 @@
+// MARK: - File: GatesViewModel.swift (Updated April 3, 2025)
+// Updated cost properties to match GateManager
 
 import SwiftUI
 import CoreData
 import Combine
 
-class SanctumViewModel: ObservableObject {
+class GatesViewModel: ObservableObject {
     // --- Properties ---
-    @Published var fragmentCount: Int = 0
-    @Published var buildErrorMessage: String? = nil
-    let availableItems: [AvailableSanctumItem] = AvailableSanctumItem.buildableItems
+    @Published var gates: [GateStatus] = []
+    @Published var manaCrystals: Int = 0
+    @Published var actionErrorMessage: String? = nil
 
     private var viewContext = PersistenceController.shared.container.viewContext
     private var userProfile: UserProfile?
-    private var cancellables = Set<AnyCancellable>() // Store observers
+    private var cancellables = Set<AnyCancellable>()
+
+    // --- UPDATED Cost Properties ---
+    // Get costs directly from the manager's constants
+    let analysisCost = GateManager.shared.analysisCost
+    let refreshLockedCost = GateManager.shared.refreshLockedCost
+    let refreshAnalyzedCost = GateManager.shared.refreshAnalyzedCost
 
     init() {
         fetchUserProfile()
-        // --- ADD Observer for Reset Notification ---
+        fetchGates()
+        // Observe Reset
         NotificationCenter.default.publisher(for: .didPerformReset)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                print("SanctumViewModel received reset notification. Refreshing data.")
-                self?.fetchUserProfile() // Re-fetch profile to update fragment count
-                // Note: Placed items list uses @FetchRequest in View, should update automatically
-            }
-            .store(in: &cancellables)
-        // --- END Observer ---
+            .receive(on: DispatchQueue.main).sink { [weak self] _ in print("GatesViewModel received reset notification."); self?.fetchUserProfile(); self?.fetchGates() }.store(in: &cancellables)
+        // Observe Profile Update
+        NotificationCenter.default.publisher(for: .didUpdateUserProfile)
+            .receive(on: DispatchQueue.main).sink { [weak self] _ in print("GatesViewModel received profile update notification."); self?.fetchUserProfile(); self?.fetchGates() }.store(in: &cancellables)
     }
 
-    // --- Functions (fetchUserProfile, attemptToBuild) ---
-    // No changes needed inside these functions for reset, just the observer in init()
-    func fetchUserProfile() { /* ... */ let fetchRequest: NSFetchRequest<UserProfile> = UserProfile.fetchRequest(); fetchRequest.fetchLimit = 1; do { if let profile = try viewContext.fetch(fetchRequest).first { self.userProfile = profile; self.fragmentCount = Int(profile.fragmentCount); /* print("SanctumViewModel: UserProfile fetched...") */ } else { print("SanctumViewModel: UserProfile not found."); self.fragmentCount = 0 } } catch { print("SanctumViewModel: Error fetching UserProfile: \(error)"); self.fragmentCount = 0 } }
-    func attemptToBuild(item: AvailableSanctumItem) { /* ... */ guard let profile = userProfile else { print("Cannot build: UserProfile not loaded."); self.buildErrorMessage = "Error: User data not loaded."; return }; self.buildErrorMessage = nil; let success = SanctumManager.shared.spendFragmentsToBuild(item: item, profile: profile); if success { fetchUserProfile() } else { if profile.fragmentCount < item.fragmentCost { self.buildErrorMessage = "Not enough fragments." } else { self.buildErrorMessage = "'\(item.name)' already constructed." }; print("Build attempt failed for \(item.name).") } }
+    // --- Data Fetching ---
+
+    func fetchUserProfile() {
+        // (Code remains the same)
+        let fetchRequest: NSFetchRequest<UserProfile> = UserProfile.fetchRequest(); fetchRequest.fetchLimit = 1
+        do { if let profile = try viewContext.fetch(fetchRequest).first { self.userProfile = profile; DispatchQueue.main.async { self.manaCrystals = Int(profile.manaCrystals) } } else { print("GatesViewModel: UserProfile not found."); DispatchQueue.main.async { self.manaCrystals = 0 } }
+        } catch { print("GatesViewModel: Error fetching UserProfile: \(error)"); DispatchQueue.main.async { self.manaCrystals = 0 } }
+    }
+
+    func fetchGates() {
+        // (Code remains the same)
+        let request: NSFetchRequest<GateStatus> = GateStatus.fetchRequest(); request.sortDescriptors = [ NSSortDescriptor(keyPath: \GateStatus.statusChangeDate, ascending: false) ]
+        do { let fetchedGates = try viewContext.fetch(request); DispatchQueue.main.async { self.gates = fetchedGates; print("GatesViewModel: Fetched \(fetchedGates.count) gates.") }
+        } catch { print("GatesViewModel: Error fetching gates: \(error)"); DispatchQueue.main.async { self.gates = [] } }
+    }
+
+    // --- Actions ---
+
+    func attemptAnalysis(gate: GateStatus) {
+        // (Code remains the same, uses self.analysisCost)
+        guard let profile = userProfile else { DispatchQueue.main.async { self.actionErrorMessage = "Error: User data not loaded." }; return }; DispatchQueue.main.async { self.actionErrorMessage = nil }
+        let success = GateManager.shared.analyzeGate(gate: gate, profile: profile)
+        if success { print("Analysis successful via ViewModel.") } else { DispatchQueue.main.async { if profile.manaCrystals < self.analysisCost { self.actionErrorMessage = "Not enough Mana Crystals (\(profile.manaCrystals)/\(self.analysisCost))." } else if gate.status != "Locked" { self.actionErrorMessage = "Gate is no longer locked." } else { self.actionErrorMessage = "Analysis failed for an unknown reason." } }; print("Analysis attempt failed for gate.") }
+    }
+
+    func attemptClear(gate: GateStatus) {
+        // (Code remains the same)
+        guard let profile = userProfile else { print("Cannot clear: UserProfile not loaded."); DispatchQueue.main.async { self.actionErrorMessage = "Error: User data not loaded." }; return }; DispatchQueue.main.async { self.actionErrorMessage = nil }
+        print("--> Checking clear condition via ViewModel..."); let conditionMet = GateManager.shared.checkClearCondition(gate: gate, profile: profile, context: viewContext)
+        guard conditionMet else { print("<-- Clear condition not met for Gate ID: \(gate.id?.uuidString ?? "N/A")"); DispatchQueue.main.async { self.actionErrorMessage = "Clear condition not yet met! (\(gate.clearConditionDescription ?? ""))" }; return }
+        print("<-- Clear condition met. Attempting to clear gate..."); let success = GateManager.shared.clearGate(gate: gate, profile: profile)
+        if success { print("Gate cleared successfully via ViewModel.") } else { DispatchQueue.main.async { self.actionErrorMessage = "Failed to clear gate." }; print("Clearing attempt failed for gate.") }
+    }
+
+    func attemptRefresh(gate: GateStatus) {
+        // (Code remains the same, manager now handles different costs)
+        guard let profile = userProfile else { DispatchQueue.main.async { self.actionErrorMessage = "Error: User data not loaded." }; return }; DispatchQueue.main.async { self.actionErrorMessage = nil }
+        let result = GateManager.shared.refreshGate(gate: gate, profile: profile, context: viewContext)
+        if result.success { print("Gate refreshed successfully via ViewModel.") } else { DispatchQueue.main.async { self.actionErrorMessage = result.message ?? "Failed to refresh gate." }; print("Refresh attempt failed for gate.") }
+    }
+
+    func deleteGate(gate: GateStatus) {
+        viewContext.delete(gate)
+        do {
+            try viewContext.save()
+            fetchGates() // Refresh the list
+        } catch {
+            print("Error deleting gate: \(error)")
+            DispatchQueue.main.async {
+                self.actionErrorMessage = "Failed to delete gate."
+            }
+        }
+    }
 }

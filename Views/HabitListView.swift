@@ -1,98 +1,151 @@
-// MARK: - ViewModels (Create a 'ViewModels' Group/Folder in Xcode)
+// MARK: - File: HabitListView.swift
+// Purpose: Displays the list of user's habits.
+// Update: Corrected completeHabit call (removed context argument).
 
-// --- Habit List ViewModel (HabitListViewModel.swift) ---
-// Manages the data and logic for the list of all habits.
-import Combine // Needed for ObservableObject
+import SwiftUI
+import CoreData
 
-class HabitListViewModel: ObservableObject {
-    private let viewContext = PersistenceController.shared.container.viewContext
-
-    // Function to delete habits
-    func deleteHabits(offsets: IndexSet, habits: FetchedResults<Habit>) {
-        withAnimation {
-            offsets.map { habits[$0] }.forEach(viewContext.delete)
-            PersistenceController.shared.saveContext() // Save changes
-        }
-    }
-}
-
-// --- Habit List View (HabitListView.swift) ---
 struct HabitListView: View {
-    @StateObject private var viewModel = HabitListViewModel()
+    // MARK: - Properties
+
+    // Access Core Data managed object context
     @Environment(\.managedObjectContext) private var viewContext
 
-    // State variable to control showing the Add/Edit sheet
-    @State private var showingAddHabitSheet = false
-    @State private var habitToEdit: Habit? = nil // Track which habit to edit
-
-    // Fetch all habits, sorted by creation date
+    // Fetch Request to get Habit entities, sorted by creation date
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Habit.creationDate, ascending: true)],
-        animation: .default)
+        animation: .default // Animate changes to the list
+    )
     private var habits: FetchedResults<Habit>
+
+    // State variable to control the presentation of the Add/Edit sheet
+    @State private var showingAddHabitSheet = false
+
+    // State variable to control the selected category for filtering
+    @State private var selectedCategory: StatCategory?
+
+    // MARK: - Body
 
     var body: some View {
         NavigationView {
-            List {
-                ForEach(habits) { habit in
-                    // Basic display of habit details
-                    VStack(alignment: .leading) {
-                        Text(habit.name ?? "Unnamed Habit").font(.headline)
-                        Text("Category: \(habit.category ?? "-") | XP: \(habit.xpValue) | Streak: \(habit.streak)")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        if let cue = habit.cue, !cue.isEmpty {
-                             Text("Cue: \(cue)")
-                                 .font(.caption2)
-                                 .foregroundColor(.orange) // Example highlight
+            VStack(spacing: 0) {
+                // Category Filter
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(StatCategory.allCases) { category in
+                            CategoryFilterButton(
+                                category: category,
+                                isSelected: selectedCategory == category,
+                                action: { selectedCategory = selectedCategory == category ? nil : category }
+                            )
                         }
-                         if habit.isTwoMinuteVersion {
-                             Text("(2-Min Rule Version)")
-                                 .font(.caption2)
-                                 .foregroundColor(.yellow) // Example highlight
-                        }
-
                     }
-                     // Allow tapping row to edit
-                    .contentShape(Rectangle()) // Make whole row tappable
-                    .onTapGesture {
-                        self.habitToEdit = habit // Set the habit to edit
-                        self.showingAddHabitSheet = true // Show the sheet
-                    }
-
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
                 }
-                .onDelete(perform: deleteItems) // Enable swipe to delete
-                 .listRowBackground(Color.black.opacity(0.3)) // Themed row background
+                .background(ThemeColors.panelBackground.opacity(0.3))
+                
+                // Habits List
+                List {
+                    ForEach(filteredHabits) { habit in
+                        HabitRowView(habit: habit, onComplete: { completedHabit in
+                            print("Completing habit: \(completedHabit.name ?? "Unknown") from HabitListView")
+                            HabitTrackingManager.shared.completeHabit(completedHabit)
+                        })
+                    }
+                    .onDelete(perform: deleteHabits)
+                }
+                .listStyle(.plain)
             }
-            .navigationTitle("All Habits")
+            .navigationTitle("Habits")
             .toolbar {
-                // Edit button for list editing mode (optional)
-                ToolbarItem(placement: .navigationBarLeading) {
-                    EditButton()
-                }
-                // Add button to show the sheet
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        self.habitToEdit = nil // Ensure we are adding, not editing
-                        self.showingAddHabitSheet = true
+                        showingAddHabitSheet = true
                     } label: {
                         Label("Add Habit", systemImage: "plus")
                     }
+                    .tint(ThemeColors.primaryAccent)
                 }
             }
-            // Sheet presentation for adding/editing habits
             .sheet(isPresented: $showingAddHabitSheet) {
-                // Pass the habit to edit (if any) to the AddEditHabitView
-                AddEditHabitView(habitToEdit: self.habitToEdit)
-                    // Inject the context into the sheet's environment
-                    .environment(\.managedObjectContext, self.viewContext)
+                AddEditHabitView(habitToEdit: nil)
             }
-             .listStyle(InsetGroupedListStyle())
+            .overlay {
+                if habits.isEmpty {
+                    Text("No habits yet. Tap '+' to add your first quest!")
+                        .font(.callout)
+                        .foregroundColor(ThemeColors.secondaryText)
+                        .padding()
+                        .multilineTextAlignment(.center)
+                }
+            }
+        }
+        .navigationViewStyle(.stack)
+    }
+
+    // MARK: - Computed Properties
+    private var filteredHabits: [Habit] {
+        guard let selectedCategory = selectedCategory else { return Array(habits) }
+        return habits.filter { habit in
+            guard let habitCategory = habit.statCategory else { return false }
+            return habitCategory == selectedCategory.rawValue
         }
     }
 
-    // Function called by onDelete modifier
-    private func deleteItems(offsets: IndexSet) {
-        viewModel.deleteHabits(offsets: offsets, habits: habits)
+    // MARK: - Functions
+
+    // Function to handle deleting habits from the list
+    private func deleteHabits(offsets: IndexSet) {
+        withAnimation {
+            // Map the offsets to the actual Habit objects
+            offsets.map { habits[$0] }.forEach(viewContext.delete)
+
+            // Save the context after deletion
+            PersistenceController.shared.saveContext()
+        }
     }
 }
+
+// MARK: - Category Filter Button
+struct CategoryFilterButton: View {
+    let category: StatCategory
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(category.rawValue)
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(isSelected ? ThemeColors.primaryAccent : ThemeColors.panelBackground)
+                )
+                .foregroundColor(isSelected ? .white : ThemeColors.secondaryText)
+        }
+    }
+}
+
+// MARK: - Previews
+struct HabitListView_Previews: PreviewProvider {
+    static var previews: some View {
+        HabitListView()
+            // Provide the preview context for Core Data
+            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+            .preferredColorScheme(.dark)
+            // Ensure ThemeColors is available for preview
+            // Ensure HabitRowView is available for preview
+            // Ensure HabitTrackingManager is available or mock its function for preview if needed
+    }
+}
+
+// MARK: - Assumptions for Compilation
+// - HabitRowView struct exists and takes 'habit: Habit' and 'onComplete: (Habit) -> Void' parameters.
+// - PersistenceController exists with 'preview' and 'shared' instances.
+// - AddEditHabitView struct exists.
+// - ThemeColors struct exists.
+// - Habit Core Data entity exists.
+// - HabitTrackingManager class exists with a shared instance and a 'completeHabit(_:)' method (that does NOT take a context argument).

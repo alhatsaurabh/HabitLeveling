@@ -6,6 +6,38 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0988F1EE2DA503C80071996C /* ViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0922A9ED2DA0CDE50003A6BD /* ViewModifiers.swift */; };
+		0988F1EF2DA503C80071996C /* ViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0922A9ED2DA0CDE50003A6BD /* ViewModifiers.swift */; };
+		09BE87E42D9D3A38004FCCFB /* SoloPanelModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09BE87E32D9D3A38004FCCFB /* SoloPanelModifier.swift */; };
+		09BE87EC2D9D5D1B004FCCFB /* GradientButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09BE87EB2D9D5D1B004FCCFB /* GradientButtonStyle.swift */; };
+		09BE87F72D9DEC53004FCCFB /* ThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09BE87F62D9DEC53004FCCFB /* ThemeColors.swift */; };
+		09C2BA1F2D9F5D1F00CD6352 /* GateStatus+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA1D2D9F5D1F00CD6352 /* GateStatus+CoreDataClass.swift */; };
+		09C2BA202D9F5D1F00CD6352 /* GateStatus+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA1E2D9F5D1F00CD6352 /* GateStatus+CoreDataProperties.swift */; };
+		09C2BA212D9F5D1F00CD6352 /* GateStatus+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA1D2D9F5D1F00CD6352 /* GateStatus+CoreDataClass.swift */; };
+		09C2BA222D9F5D1F00CD6352 /* GateStatus+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA1E2D9F5D1F00CD6352 /* GateStatus+CoreDataProperties.swift */; };
+		09C2BA292D9F5D3900CD6352 /* Habit+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA282D9F5D3900CD6352 /* Habit+CoreDataProperties.swift */; };
+		09C2BA2A2D9F5D3900CD6352 /* Habit+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA272D9F5D3900CD6352 /* Habit+CoreDataClass.swift */; };
+		09C2BA2B2D9F5D3900CD6352 /* Habit+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA272D9F5D3900CD6352 /* Habit+CoreDataClass.swift */; };
+		09C2BA2C2D9F5D3900CD6352 /* Habit+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA282D9F5D3900CD6352 /* Habit+CoreDataProperties.swift */; };
+		09C2BA332D9F5D5200CD6352 /* HabitLog+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA312D9F5D5200CD6352 /* HabitLog+CoreDataClass.swift */; };
+		09C2BA342D9F5D5200CD6352 /* HabitLog+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA322D9F5D5200CD6352 /* HabitLog+CoreDataProperties.swift */; };
+		09C2BA352D9F5D5200CD6352 /* HabitLog+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA312D9F5D5200CD6352 /* HabitLog+CoreDataClass.swift */; };
+		09C2BA362D9F5D5200CD6352 /* HabitLog+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA322D9F5D5200CD6352 /* HabitLog+CoreDataProperties.swift */; };
+		09C2BA3D2D9F5D6700CD6352 /* UserProfile+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA3C2D9F5D6700CD6352 /* UserProfile+CoreDataProperties.swift */; };
+		09C2BA3E2D9F5D6700CD6352 /* UserProfile+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA3B2D9F5D6700CD6352 /* UserProfile+CoreDataClass.swift */; };
+		09C2BA3F2D9F5D6700CD6352 /* UserProfile+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA3C2D9F5D6700CD6352 /* UserProfile+CoreDataProperties.swift */; };
+		09C2BA402D9F5D6700CD6352 /* UserProfile+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA3B2D9F5D6700CD6352 /* UserProfile+CoreDataClass.swift */; };
+		09C2BA622DA088F000CD6352 /* UserArtifact+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA602DA088F000CD6352 /* UserArtifact+CoreDataClass.swift */; };
+		09C2BA632DA088F000CD6352 /* UserArtifact+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA612DA088F000CD6352 /* UserArtifact+CoreDataProperties.swift */; };
+		09C2BA642DA088F000CD6352 /* UserArtifact+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA602DA088F000CD6352 /* UserArtifact+CoreDataClass.swift */; };
+		09C2BA652DA088F000CD6352 /* UserArtifact+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA612DA088F000CD6352 /* UserArtifact+CoreDataProperties.swift */; };
+		09C2BA6C2DA0890900CD6352 /* Artifact+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA6A2DA0890900CD6352 /* Artifact+CoreDataClass.swift */; };
+		09C2BA6D2DA0890900CD6352 /* Artifact+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA6B2DA0890900CD6352 /* Artifact+CoreDataProperties.swift */; };
+		09C2BA6E2DA0890900CD6352 /* Artifact+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA6A2DA0890900CD6352 /* Artifact+CoreDataClass.swift */; };
+		09C2BA6F2DA0890900CD6352 /* Artifact+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C2BA6B2DA0890900CD6352 /* Artifact+CoreDataProperties.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		0989FC1F2D9C176400729503 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,17 +56,118 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0922A9ED2DA0CDE50003A6BD /* ViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModifiers.swift; sourceTree = "<group>"; };
 		0989FC0C2D9C176200729503 /* HabitLeveling.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HabitLeveling.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0989FC1E2D9C176400729503 /* HabitLevelingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HabitLevelingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0989FC282D9C176400729503 /* HabitLevelingUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = HabitLevelingUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		09BE87E32D9D3A38004FCCFB /* SoloPanelModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoloPanelModifier.swift; sourceTree = "<group>"; };
+		09BE87EB2D9D5D1B004FCCFB /* GradientButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientButtonStyle.swift; sourceTree = "<group>"; };
+		09BE87F62D9DEC53004FCCFB /* ThemeColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeColors.swift; sourceTree = "<group>"; };
+		09C2BA1D2D9F5D1F00CD6352 /* GateStatus+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "GateStatus+CoreDataClass.swift"; path = "HabitLeveling/Models/GateStatus+CoreDataClass.swift"; sourceTree = "<group>"; };
+		09C2BA1E2D9F5D1F00CD6352 /* GateStatus+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "GateStatus+CoreDataProperties.swift"; path = "HabitLeveling/Models/GateStatus+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		09C2BA272D9F5D3900CD6352 /* Habit+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Habit+CoreDataClass.swift"; path = "HabitLeveling/Models/Habit+CoreDataClass.swift"; sourceTree = "<group>"; };
+		09C2BA282D9F5D3900CD6352 /* Habit+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Habit+CoreDataProperties.swift"; path = "HabitLeveling/Models/Habit+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		09C2BA312D9F5D5200CD6352 /* HabitLog+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "HabitLog+CoreDataClass.swift"; path = "HabitLeveling/Models/HabitLog+CoreDataClass.swift"; sourceTree = "<group>"; };
+		09C2BA322D9F5D5200CD6352 /* HabitLog+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "HabitLog+CoreDataProperties.swift"; path = "HabitLeveling/Models/HabitLog+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		09C2BA3B2D9F5D6700CD6352 /* UserProfile+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "UserProfile+CoreDataClass.swift"; path = "HabitLeveling/Models/UserProfile+CoreDataClass.swift"; sourceTree = "<group>"; };
+		09C2BA3C2D9F5D6700CD6352 /* UserProfile+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "UserProfile+CoreDataProperties.swift"; path = "HabitLeveling/Models/UserProfile+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		09C2BA602DA088F000CD6352 /* UserArtifact+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "UserArtifact+CoreDataClass.swift"; path = "HabitLeveling/Models/UserArtifact+CoreDataClass.swift"; sourceTree = "<group>"; };
+		09C2BA612DA088F000CD6352 /* UserArtifact+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "UserArtifact+CoreDataProperties.swift"; path = "HabitLeveling/Models/UserArtifact+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		09C2BA6A2DA0890900CD6352 /* Artifact+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Artifact+CoreDataClass.swift"; path = "HabitLeveling/Models/Artifact+CoreDataClass.swift"; sourceTree = "<group>"; };
+		09C2BA6B2DA0890900CD6352 /* Artifact+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "Artifact+CoreDataProperties.swift"; path = "HabitLeveling/Models/Artifact+CoreDataProperties.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		0989FC0E2D9C176200729503 /* HabitLeveling */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = HabitLeveling;
-			sourceTree = "<group>";
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		0989FC6F2D9C3DA500729503 /* Exceptions for "Views" folder in "HabitLeveling" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ActiveQuestsSectionView.swift,
+				AddEditHabitSubViews.swift,
+				AddEditHabitView.swift,
+				ArtifactEarnedView.swift,
+				CircularProgressView.swift,
+				CombinedLevelEssenceView.swift,
+				DashboardView.swift,
+				EssenceCoreView.swift,
+				GatesView.swift,
+				HabitListView.swift,
+				HabitRowView.swift,
+				HabitTemplatePickerView.swift,
+				LevelUpView.swift,
+				SettingsView.swift,
+				StatDistributionBarView.swift,
+				StatsRadarChartView.swift,
+				StatsView.swift,
+				StatusCapsuleView.swift,
+				StatusSectionView.swift,
+			);
+			target = 0989FC0B2D9C176200729503 /* HabitLeveling */;
 		};
+		0989FC892D9CA11F00729503 /* Exceptions for "Managers" folder in "HabitLeveling" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				EssenceCoreManager.swift,
+				GateManager.swift,
+				HabitTrackingManager.swift,
+				LevelingManager.swift,
+				NotificationManager.swift,
+				ResetManager.swift,
+				StatsManager.swift,
+			);
+			target = 0989FC0B2D9C176200729503 /* HabitLeveling */;
+		};
+		0989FC8A2D9CA11F00729503 /* Exceptions for "Managers" folder in "HabitLevelingUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				EssenceCoreManager.swift,
+				GateManager.swift,
+				HabitTrackingManager.swift,
+				LevelingManager.swift,
+				NotificationManager.swift,
+				ResetManager.swift,
+				StatsManager.swift,
+			);
+			target = 0989FC272D9C176400729503 /* HabitLevelingUITests */;
+		};
+		0989FC8C2D9CA15200729503 /* Exceptions for "ViewModels" folder in "HabitLeveling" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AddEditHabitViewModel.swift,
+				DashboardViewModel.swift,
+				GatesViewModel.swift,
+				HabitListViewModel.swift,
+				HabitTemplate.swift,
+				HabitTemplateProvider.swift,
+				StatsViewModel.swift,
+			);
+			target = 0989FC0B2D9C176200729503 /* HabitLeveling */;
+		};
+		09A11B652D9F2918002D12B5 /* Exceptions for "HabitLeveling" folder in "HabitLeveling" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ArtifactSeeder.swift,
+				Assets.xcassets,
+				AvailableSanctumItem.swift,
+				ContentView.swift,
+				HabitLevelingApp.swift,
+				Persistence.swift,
+				StatCategory.swift,
+			);
+			target = 0989FC0B2D9C176200729503 /* HabitLeveling */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		09C2BA062D9F3C3200CD6352 /* Exceptions for "HabitLeveling" folder in "Copy Bundle Resources" phase from "HabitLeveling" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 0989FC0A2D9C176200729503 /* Resources */;
+			membershipExceptions = (
+				HabitLeveling.xcdatamodeld,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
 		0989FC212D9C176400729503 /* HabitLevelingTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = HabitLevelingTests;
@@ -43,6 +176,40 @@
 		0989FC2B2D9C176400729503 /* HabitLevelingUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = HabitLevelingUITests;
+			sourceTree = "<group>";
+		};
+		0989FC672D9C3DA500729503 /* Views */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0989FC6F2D9C3DA500729503 /* Exceptions for "Views" folder in "HabitLeveling" target */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		0989FC882D9CA11100729503 /* Managers */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0989FC892D9CA11F00729503 /* Exceptions for "Managers" folder in "HabitLeveling" target */,
+				0989FC8A2D9CA11F00729503 /* Exceptions for "Managers" folder in "HabitLevelingUITests" target */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		0989FC8B2D9CA14A00729503 /* ViewModels */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				0989FC8C2D9CA15200729503 /* Exceptions for "ViewModels" folder in "HabitLeveling" target */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		09A11B522D9F2918002D12B5 /* HabitLeveling */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				09A11B652D9F2918002D12B5 /* Exceptions for "HabitLeveling" folder in "HabitLeveling" target */,
+				09C2BA062D9F3C3200CD6352 /* Exceptions for "HabitLeveling" folder in "Copy Bundle Resources" phase from "HabitLeveling" target */,
+			);
+			path = HabitLeveling;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,9 +242,26 @@
 		0989FC032D9C176200729503 = {
 			isa = PBXGroup;
 			children = (
-				0989FC0E2D9C176200729503 /* HabitLeveling */,
+				09BE87F52D9DEC41004FCCFB /* Theme */,
+				09BE87E22D9D3A1B004FCCFB /* Modifiers */,
+				0989FC8B2D9CA14A00729503 /* ViewModels */,
+				0989FC882D9CA11100729503 /* Managers */,
+				0989FC672D9C3DA500729503 /* Views */,
 				0989FC212D9C176400729503 /* HabitLevelingTests */,
 				0989FC2B2D9C176400729503 /* HabitLevelingUITests */,
+				09A11B522D9F2918002D12B5 /* HabitLeveling */,
+				09C2BA6A2DA0890900CD6352 /* Artifact+CoreDataClass.swift */,
+				09C2BA6B2DA0890900CD6352 /* Artifact+CoreDataProperties.swift */,
+				09C2BA602DA088F000CD6352 /* UserArtifact+CoreDataClass.swift */,
+				09C2BA612DA088F000CD6352 /* UserArtifact+CoreDataProperties.swift */,
+				09C2BA3B2D9F5D6700CD6352 /* UserProfile+CoreDataClass.swift */,
+				09C2BA3C2D9F5D6700CD6352 /* UserProfile+CoreDataProperties.swift */,
+				09C2BA312D9F5D5200CD6352 /* HabitLog+CoreDataClass.swift */,
+				09C2BA322D9F5D5200CD6352 /* HabitLog+CoreDataProperties.swift */,
+				09C2BA272D9F5D3900CD6352 /* Habit+CoreDataClass.swift */,
+				09C2BA282D9F5D3900CD6352 /* Habit+CoreDataProperties.swift */,
+				09C2BA1D2D9F5D1F00CD6352 /* GateStatus+CoreDataClass.swift */,
+				09C2BA1E2D9F5D1F00CD6352 /* GateStatus+CoreDataProperties.swift */,
 				0989FC0D2D9C176200729503 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +274,24 @@
 				0989FC282D9C176400729503 /* HabitLevelingUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		09BE87E22D9D3A1B004FCCFB /* Modifiers */ = {
+			isa = PBXGroup;
+			children = (
+				09BE87E32D9D3A38004FCCFB /* SoloPanelModifier.swift */,
+				09BE87EB2D9D5D1B004FCCFB /* GradientButtonStyle.swift */,
+				0922A9ED2DA0CDE50003A6BD /* ViewModifiers.swift */,
+			);
+			path = Modifiers;
+			sourceTree = "<group>";
+		};
+		09BE87F52D9DEC41004FCCFB /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				09BE87F62D9DEC53004FCCFB /* ThemeColors.swift */,
+			);
+			path = Theme;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -106,9 +308,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				0989FC0E2D9C176200729503 /* HabitLeveling */,
 			);
 			name = HabitLeveling;
 			packageProductDependencies = (
@@ -155,6 +354,10 @@
 			);
 			fileSystemSynchronizedGroups = (
 				0989FC2B2D9C176400729503 /* HabitLevelingUITests */,
+				0989FC672D9C3DA500729503 /* Views */,
+				0989FC882D9CA11100729503 /* Managers */,
+				0989FC8B2D9CA14A00729503 /* ViewModels */,
+				09A11B522D9F2918002D12B5 /* HabitLeveling */,
 			);
 			name = HabitLevelingUITests;
 			packageProductDependencies = (
@@ -236,6 +439,22 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				09BE87EC2D9D5D1B004FCCFB /* GradientButtonStyle.swift in Sources */,
+				09BE87F72D9DEC53004FCCFB /* ThemeColors.swift in Sources */,
+				09BE87E42D9D3A38004FCCFB /* SoloPanelModifier.swift in Sources */,
+				09C2BA3F2D9F5D6700CD6352 /* UserProfile+CoreDataProperties.swift in Sources */,
+				09C2BA402D9F5D6700CD6352 /* UserProfile+CoreDataClass.swift in Sources */,
+				09C2BA212D9F5D1F00CD6352 /* GateStatus+CoreDataClass.swift in Sources */,
+				09C2BA222D9F5D1F00CD6352 /* GateStatus+CoreDataProperties.swift in Sources */,
+				09C2BA6C2DA0890900CD6352 /* Artifact+CoreDataClass.swift in Sources */,
+				09C2BA6D2DA0890900CD6352 /* Artifact+CoreDataProperties.swift in Sources */,
+				09C2BA352D9F5D5200CD6352 /* HabitLog+CoreDataClass.swift in Sources */,
+				0988F1EE2DA503C80071996C /* ViewModifiers.swift in Sources */,
+				09C2BA362D9F5D5200CD6352 /* HabitLog+CoreDataProperties.swift in Sources */,
+				09C2BA2B2D9F5D3900CD6352 /* Habit+CoreDataClass.swift in Sources */,
+				09C2BA2C2D9F5D3900CD6352 /* Habit+CoreDataProperties.swift in Sources */,
+				09C2BA622DA088F000CD6352 /* UserArtifact+CoreDataClass.swift in Sources */,
+				09C2BA632DA088F000CD6352 /* UserArtifact+CoreDataProperties.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,6 +469,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				09C2BA1F2D9F5D1F00CD6352 /* GateStatus+CoreDataClass.swift in Sources */,
+				09C2BA202D9F5D1F00CD6352 /* GateStatus+CoreDataProperties.swift in Sources */,
+				09C2BA332D9F5D5200CD6352 /* HabitLog+CoreDataClass.swift in Sources */,
+				0988F1EF2DA503C80071996C /* ViewModifiers.swift in Sources */,
+				09C2BA342D9F5D5200CD6352 /* HabitLog+CoreDataProperties.swift in Sources */,
+				09C2BA642DA088F000CD6352 /* UserArtifact+CoreDataClass.swift in Sources */,
+				09C2BA652DA088F000CD6352 /* UserArtifact+CoreDataProperties.swift in Sources */,
+				09C2BA6E2DA0890900CD6352 /* Artifact+CoreDataClass.swift in Sources */,
+				09C2BA6F2DA0890900CD6352 /* Artifact+CoreDataProperties.swift in Sources */,
+				09C2BA292D9F5D3900CD6352 /* Habit+CoreDataProperties.swift in Sources */,
+				09C2BA2A2D9F5D3900CD6352 /* Habit+CoreDataClass.swift in Sources */,
+				09C2BA3D2D9F5D6700CD6352 /* UserProfile+CoreDataProperties.swift in Sources */,
+				09C2BA3E2D9F5D6700CD6352 /* UserProfile+CoreDataClass.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

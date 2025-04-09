@@ -1,3 +1,4 @@
+// ContentView.swift
 
 import SwiftUI
 
@@ -9,17 +10,11 @@ struct ContentView: View {
                     Label("Dashboard", systemImage: "house.fill")
                 }
 
-            HabitListView()
-                .tabItem {
-                    Label("Habits", systemImage: "list.bullet")
-                }
-
             // --- UPDATED Tab ---
-            GatesView() // Use the renamed view
+            GatesView()
                 .tabItem {
-                    Label("Gates", systemImage: "shield.lefthalf.filled.slash") // Example icon for Gates
+                    Label("Gates", systemImage: "shield.lefthalf.filled.slash")
                 }
-            // --- END UPDATED Tab ---
 
             SettingsView()
                 .tabItem {
@@ -27,6 +22,6 @@ struct ContentView: View {
                 }
         }
         .preferredColorScheme(.dark)
-        .tint(ThemeColors.primaryAccent) // Use theme color
+        .tint(ThemeColors.primaryAccent)
     }
 }
