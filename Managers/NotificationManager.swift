@@ -83,6 +83,56 @@ class NotificationManager: NSObject, ObservableObject { // Inherit from NSObject
 
     // MARK: - Scheduling
 
+    // Schedules notification for a single habit
+    func scheduleNotificationForHabit(_ habit: Habit) {
+        print("📱 Scheduling notification for habit: \(habit.name ?? "Unknown")")
+        
+        // First ensure the habit has a notification time and name
+        guard let notificationTime = habit.notificationTime,
+              let habitID = habit.id,
+              let habitName = habit.name, !habitName.isEmpty
+        else {
+            print("⚠️ Cannot schedule notification: Habit missing required data")
+            return
+        }
+        
+        notificationCenter.getNotificationSettings { [weak self] settings in
+            guard let self = self else { return }
+            guard settings.authorizationStatus == .authorized else {
+                print("⚠️ Cannot schedule notification: Authorization not granted.")
+                return
+            }
+            
+            // Remove existing notification for this habit if any
+            let requestIdentifier = "habit-\(habitID.uuidString)"
+            self.notificationCenter.removePendingNotificationRequests(withIdentifiers: [requestIdentifier])
+            
+            // Create notification content
+            let content = UNMutableNotificationContent()
+            content.title = "Quest Reminder: \(habitName)"
+            content.body = habit.habitDescription?.isEmpty == false ? habit.habitDescription! : "Time for your quest: \(habitName)!"
+            content.sound = UNNotificationSound.default
+            content.userInfo = ["habitID": habitID.uuidString]
+            
+            // Create trigger
+            let components = Calendar.current.dateComponents([.hour, .minute], from: notificationTime)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+            print("    Scheduling trigger for \(habitName) at \(components.hour ?? -1):\(components.minute ?? -1) (Daily Repeat)")
+            
+            // Create request with unique ID
+            let request = UNNotificationRequest(identifier: requestIdentifier, content: content, trigger: trigger)
+            
+            // Add request to notification center
+            self.notificationCenter.add(request) { error in
+                if let error = error {
+                    print("❌ Error scheduling notification for habit \(habitName): \(error.localizedDescription)")
+                } else {
+                    print("✅ Successfully scheduled notification for habit: \(habitName)")
+                }
+            }
+        }
+    }
+
     // Schedules notifications for all habits that have a reminder time set.
     // NOTE: This currently schedules DAILY repeating notifications at the set time.
     // Proper weekly/monthly scheduling requires data model changes (e.g., storing weekdays).

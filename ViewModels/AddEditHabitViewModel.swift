@@ -79,14 +79,12 @@ class AddEditHabitViewModel: ObservableObject {
             
             // Handle notifications based on reminder settings
             if notificationTime != nil {
-                print("Scheduling notifications for all habits after saving habit with reminder time")
-                NotificationManager.shared.scheduleNotificationsForAllHabits()
+                print("Scheduling notification for habit with reminder time")
+                NotificationManager.shared.scheduleNotificationForHabit(habit)
             } else if habitToEdit?.notificationTime != nil {
                 // If editing a habit and removing the notification time
                 print("Cancelling notification for habit after removing reminder time")
                 NotificationManager.shared.cancelNotification(for: habit)
-                // Reschedule all to ensure everything is up to date
-                NotificationManager.shared.scheduleNotificationsForAllHabits()
             }
             
             return true
