@@ -9,8 +9,17 @@ struct ContentView: View {
                 .tabItem {
                     Label("Dashboard", systemImage: "house.fill")
                 }
+            
+            HabitListView()
+                .tabItem {
+                    Label("Habits", systemImage: "list.bullet")
+                }
+                
+            CalendarView()
+                .tabItem {
+                    Label("Calendar", systemImage: "calendar")
+                }
 
-            // --- UPDATED Tab ---
             GatesView()
                 .tabItem {
                     Label("Gates", systemImage: "shield.lefthalf.filled.slash")
