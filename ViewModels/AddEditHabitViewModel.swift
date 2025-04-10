@@ -76,9 +76,19 @@ class AddEditHabitViewModel: ObservableObject {
         do {
             try viewContext.save()
             print("Habit saved successfully.")
-            // TODO: Handle notification scheduling/cancelling based on notificationTime
-            // Consider calling NotificationManager here
-            // if let time = notificationTime { NotificationManager.shared.scheduleNotification(...) } else { NotificationManager.shared.cancelNotification(...) }
+            
+            // Handle notifications based on reminder settings
+            if notificationTime != nil {
+                print("Scheduling notifications for all habits after saving habit with reminder time")
+                NotificationManager.shared.scheduleNotificationsForAllHabits()
+            } else if habitToEdit?.notificationTime != nil {
+                // If editing a habit and removing the notification time
+                print("Cancelling notification for habit after removing reminder time")
+                NotificationManager.shared.cancelNotification(for: habit)
+                // Reschedule all to ensure everything is up to date
+                NotificationManager.shared.scheduleNotificationsForAllHabits()
+            }
+            
             return true
         } catch {
             print("Error saving habit: \(error.localizedDescription)")
