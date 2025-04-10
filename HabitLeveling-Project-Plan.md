@@ -14,6 +14,9 @@ HabitLeveling is a gamified habit tracking app with RPG elements including level
 - ✅ Fixed StatCategory enum definition conflicts
 - ✅ Fixed gate condition checking for habit categories
 - ✅ Improved gate rewards parsing
+- ✅ Fixed gate mana crystal rewards to consistently grant 50 mana crystals
+- ✅ Implemented swipe-to-delete for cleared gates
+- ✅ Fixed habit reminder notifications system
 
 ## Development Phases
 
@@ -55,10 +58,12 @@ HabitLeveling is a gamified habit tracking app with RPG elements including level
   - [ ] Link pomodoro completion to habit progress
 
 ### High Priority
+- [✅] Fix habit reminder notifications system
+- [✅] Fix gate rewards for mana crystals
+- [✅] Implement swipe-to-delete for cleared gates
 - [ ] Review all references to StatCategory and ensure consistency
 - [ ] Add thorough error handling in gate completion logic
 - [ ] Add validation for user inputs in habit creation
-- [ ] Fix any remaining issues with XP calculation and leveling
 - [ ] Implement data persistence safeguards to prevent data loss
 
 ### Narrative Gamification Features
@@ -78,6 +83,9 @@ HabitLeveling is a gamified habit tracking app with RPG elements including level
   - [ ] Mark story milestones on calendar
   - [ ] Award bonus rewards for pomodoro usage
   - [ ] Create achievement showcase for completed progress
+
+## Next Development Focus
+We're now ready to move forward with the smart calendar implementation as our next priority feature.
 
 ## Feature Details
 
@@ -108,9 +116,10 @@ HabitLeveling is a gamified habit tracking app with RPG elements including level
 5. Remember the core purpose: Help users build habits
 
 ## Testing Checklist
+- [✅] Test habit reminder notifications
 - [ ] Test habit creation and editing
 - [ ] Test habit completion and streaks
-- [ ] Test gate analysis, clearing, and rewards
+- [✅] Test gate clearing and mana crystal rewards
 - [ ] Test level progression and XP calculation
 - [ ] Test calendar view and history tracking
 - [ ] Test pomodoro timer functionality
