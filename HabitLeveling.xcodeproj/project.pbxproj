@@ -151,7 +151,6 @@
 				ContentView.swift,
 				HabitLevelingApp.swift,
 				Persistence.swift,
-				StatCategory.swift,
 			);
 			target = 0989FC0B2D9C176200729503 /* HabitLeveling */;
 		};

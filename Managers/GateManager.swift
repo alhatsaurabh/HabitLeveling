@@ -94,7 +94,7 @@ class GateManager {
             
             // Get all habits in the specified category
             let habitFetchRequest: NSFetchRequest<Habit> = Habit.fetchRequest()
-            habitFetchRequest.predicate = NSPredicate(format: "category == %@", categoryName)
+            habitFetchRequest.predicate = NSPredicate(format: "statCategory == %@", categoryName)
             
             do {
                 let habits = try context.fetch(habitFetchRequest)
@@ -175,11 +175,86 @@ class GateManager {
          guard gate.status == "Analyzed" else { print("Cannot clear gate: Not in 'Analyzed' state."); return false }
         print("Clearing Gate ID: \(gate.id?.uuidString ?? "N/A")")
         let viewContext = PersistenceController.shared.container.viewContext
-        var grantedXP = 0; var grantedCrystals = 0; var profileDidChange = false
-        // ... (reward parsing remains the same) ...
-        if let rewardString = gate.rewardDescription { print("Parsing reward: '\(rewardString)'"); let components = rewardString.lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted); let numbers = components.compactMap { Int($0) }; if rewardString.lowercased().contains("xp") { grantedXP = numbers.first ?? 0 }; if rewardString.lowercased().contains("mana crystal") { if let crystalIndex = components.firstIndex(where: { $0.contains("mana") }), crystalIndex > 0 { if let crystalVal = Int(components[crystalIndex-1]) { grantedCrystals = crystalVal } } else if numbers.count > 1 && grantedXP > 0 && numbers.indices.contains(1) { grantedCrystals = numbers[1] } else if numbers.count == 1 && grantedXP == 0 { grantedCrystals = numbers[0] } else { grantedCrystals = 0 } }; if rewardString.lowercased().contains("title:") { if let titlePart = rewardString.components(separatedBy: "Title:").last?.trimmingCharacters(in: .whitespaces), !titlePart.isEmpty { profile.title = titlePart; print("Granted Title: \(titlePart)") } } }
-        if grantedXP > 0 { print("Granting \(grantedXP) XP."); _ = LevelingManager.shared.addXP(to: profile, amount: grantedXP, context: viewContext) } // Saves context if level up
-        if grantedCrystals > 0 { profile.manaCrystals += Int64(grantedCrystals); print("Granted \(grantedCrystals) Mana Crystals. New total: \(profile.manaCrystals)"); profileDidChange = true }
+        var grantedXP = 0
+        var grantedCrystals = 50 // Default to 50 mana crystals for all cleared gates
+        var profileDidChange = false
+        
+        // Improved reward parsing
+        if let rewardString = gate.rewardDescription {
+            print("Parsing reward: '\(rewardString)'")
+            
+            // Extract numbers more reliably
+            let numbers = rewardString.components(separatedBy: CharacterSet.decimalDigits.inverted)
+                .compactMap { Int($0) }
+                .filter { $0 > 0 }
+            
+            print("Found numbers in reward: \(numbers)")
+            
+            // Check for XP
+            if rewardString.lowercased().contains("xp") {
+                // Try to find XP amount
+                let xpPattern = "(\\d+)\\s*xp"
+                if let xpRange = rewardString.lowercased().range(of: xpPattern, options: .regularExpression) {
+                    let xpString = rewardString[xpRange].replacingOccurrences(of: "xp", with: "", options: .caseInsensitive).trimmingCharacters(in: .whitespacesAndNewlines)
+                    if let xp = Int(xpString.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()) {
+                        grantedXP = xp
+                        print("Extracted XP amount with regex: \(grantedXP)")
+                    }
+                } else if !numbers.isEmpty {
+                    // Fallback to first number if we can't extract with regex
+                    grantedXP = numbers[0]
+                    print("Using first number as XP: \(grantedXP)")
+                }
+            }
+            
+            // Check for specific Mana Crystal amount
+            if rewardString.lowercased().contains("mana") || rewardString.lowercased().contains("crystal") {
+                // Try to find Mana Crystal amount
+                let manaPattern = "(\\d+)\\s*(?:mana|crystal)"
+                if let manaRange = rewardString.lowercased().range(of: manaPattern, options: .regularExpression) {
+                    let manaString = rewardString[manaRange].replacingOccurrences(of: "mana", with: "", options: .caseInsensitive)
+                                                          .replacingOccurrences(of: "crystal", with: "", options: .caseInsensitive)
+                                                          .trimmingCharacters(in: .whitespacesAndNewlines)
+                    if let mana = Int(manaString.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()) {
+                        grantedCrystals = mana
+                        print("Extracted Mana Crystal amount with regex: \(grantedCrystals)")
+                    }
+                } else if numbers.count > 1 && rewardString.lowercased().contains("xp") {
+                    // If we have XP and multiple numbers, the other number is likely mana
+                    for number in numbers {
+                        if number != grantedXP {
+                            grantedCrystals = number
+                            print("Using non-XP number as Mana Crystals: \(grantedCrystals)")
+                            break
+                        }
+                    }
+                }
+                
+                print("Final Mana Crystals to grant: \(grantedCrystals)")
+            }
+            
+            // Check for Title
+            if rewardString.lowercased().contains("title:") {
+                if let titlePart = rewardString.components(separatedBy: "Title:").last?.trimmingCharacters(in: .whitespaces), !titlePart.isEmpty {
+                    profile.title = titlePart
+                    print("Granted Title: \(titlePart)")
+                    profileDidChange = true
+                }
+            }
+        }
+        
+        // Grant rewards
+        if grantedXP > 0 { 
+            print("Granting \(grantedXP) XP.") 
+            _ = LevelingManager.shared.addXP(to: profile, amount: grantedXP, context: viewContext) // Saves context if level up
+        }
+        
+        // Ensure mana crystals are granted (minimum 50)
+        let finalCrystals = max(grantedCrystals, 50)
+        profile.manaCrystals += Int64(finalCrystals)
+        print("Granted \(finalCrystals) Mana Crystals. New total: \(profile.manaCrystals)")
+        profileDidChange = true 
+        
         if profile.hasChanges { profileDidChange = true }
         gate.status = "Cleared"; gate.statusChangeDate = Date(); profileDidChange = true
         if profileDidChange && grantedXP == 0 { print("Saving context after clearing gate (no XP granted but other changes occurred)."); PersistenceController.shared.saveContext() // Save changes if needed
@@ -211,10 +286,47 @@ class GateManager {
     // --- Helper Functions ---
 
     func createInitialGateIfNeeded(context: NSManagedObjectContext) {
-        // (Code remains the same - Posts notification)
-        let fetchRequest: NSFetchRequest<GateStatus> = GateStatus.fetchRequest(); fetchRequest.fetchLimit = 1
-        do { let count = try context.count(for: fetchRequest); if count == 0 { print("No gates found, creating initial E-Rank Blue Gate."); let newGate = GateStatus(context: context); newGate.id = UUID(); newGate.gateRank = "E"; newGate.gateType = "Blue"; newGate.status = "Locked"; newGate.statusChangeDate = Date(); PersistenceController.shared.saveContext(); NotificationCenter.default.post(name: .didUpdateUserProfile, object: nil) }
-        } catch { print("Error checking/creating initial gates: \(error)") }
+        print("GateManager: Checking if initial gates need to be created...")
+        
+        let fetchRequest: NSFetchRequest<GateStatus> = GateStatus.fetchRequest()
+        do {
+            let count = try context.count(for: fetchRequest)
+            print("GateManager: Found \(count) existing gates")
+            
+            if count == 0 {
+                print("GateManager: No gates found, creating initial gates...")
+                
+                // Create an E-Rank Blue Gate
+                createGate(rank: "E", type: "Blue", status: "Locked", context: context)
+                
+                // Sometimes create a second gate for variety
+                if Bool.random() {
+                    createGate(rank: "E", type: "Red", status: "Locked", context: context)
+                }
+                
+                PersistenceController.shared.saveContext()
+                print("GateManager: Initial gates created successfully")
+                NotificationCenter.default.post(name: .didUpdateUserProfile, object: nil)
+            }
+        } catch {
+            print("GateManager: Error checking/creating initial gates: \(error)")
+        }
+    }
+    
+    // Helper function to create a gate with specified properties
+    private func createGate(rank: String, type: String, status: String, context: NSManagedObjectContext) {
+        print("GateManager: Creating new \(rank)-Rank \(type) Gate")
+        let newGate = GateStatus(context: context)
+        newGate.id = UUID()
+        newGate.gateRank = rank
+        newGate.gateType = type
+        newGate.status = status
+        newGate.statusChangeDate = Date()
+        
+        if status == "Analyzed" {
+            newGate.clearConditionDescription = generateClearCondition(rank: rank)
+            newGate.rewardDescription = generateRewardDescription(rank: rank)
+        }
     }
 
     // *** RESTORED Implementation ***
@@ -243,15 +355,17 @@ class GateManager {
          // Customize rewards based on rank later if needed
          let rewards = [
              "150 XP & 50 Mana Crystals",
-             "Title: Gate Breaker",
+             "50 Mana Crystals & Title: Gate Breaker",
              "100 Mana Crystals",
-             "200 XP",
-             "Title: E-Rank Slayer",
-             "\(Int.random(in: 5...25) * 10) XP", // Example random XP
+             "200 XP & 50 Mana Crystals",
+             "50 Mana Crystals & Title: E-Rank Slayer",
+             "\(Int.random(in: 5...25) * 10) XP & 50 Mana Crystals", // Example random XP
              "\(Int.random(in: 3...15) * 10) Mana Crystals" // Example random Crystals
          ]
-         // Ensure fallback is always valid
-         return rewards.randomElement() ?? "100 XP"
+         // Ensure fallback is always valid and includes mana crystals
+         let generatedReward = rewards.randomElement() ?? "100 XP & 50 Mana Crystals"
+         print("Generated reward: \(generatedReward)")
+         return generatedReward
     }
 
     // *** RESTORED Implementation ***

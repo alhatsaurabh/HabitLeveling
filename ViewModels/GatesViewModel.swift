@@ -22,14 +22,30 @@ class GatesViewModel: ObservableObject {
     let refreshAnalyzedCost = GateManager.shared.refreshAnalyzedCost
 
     init() {
+        print("GatesViewModel: Initializing...")
         fetchUserProfile()
+        
+        // Make sure gates are initialized
+        GateManager.shared.createInitialGateIfNeeded(context: viewContext)
+        
+        // Then fetch gates
         fetchGates()
+        
         // Observe Reset
         NotificationCenter.default.publisher(for: .didPerformReset)
-            .receive(on: DispatchQueue.main).sink { [weak self] _ in print("GatesViewModel received reset notification."); self?.fetchUserProfile(); self?.fetchGates() }.store(in: &cancellables)
+            .receive(on: DispatchQueue.main).sink { [weak self] _ in 
+                print("GatesViewModel received reset notification.")
+                self?.fetchUserProfile()
+                self?.fetchGates() 
+            }.store(in: &cancellables)
+            
         // Observe Profile Update
         NotificationCenter.default.publisher(for: .didUpdateUserProfile)
-            .receive(on: DispatchQueue.main).sink { [weak self] _ in print("GatesViewModel received profile update notification."); self?.fetchUserProfile(); self?.fetchGates() }.store(in: &cancellables)
+            .receive(on: DispatchQueue.main).sink { [weak self] _ in 
+                print("GatesViewModel received profile update notification.")
+                self?.fetchUserProfile()
+                self?.fetchGates() 
+            }.store(in: &cancellables)
     }
 
     // --- Data Fetching ---
@@ -42,10 +58,26 @@ class GatesViewModel: ObservableObject {
     }
 
     func fetchGates() {
-        // (Code remains the same)
-        let request: NSFetchRequest<GateStatus> = GateStatus.fetchRequest(); request.sortDescriptors = [ NSSortDescriptor(keyPath: \GateStatus.statusChangeDate, ascending: false) ]
-        do { let fetchedGates = try viewContext.fetch(request); DispatchQueue.main.async { self.gates = fetchedGates; print("GatesViewModel: Fetched \(fetchedGates.count) gates.") }
-        } catch { print("GatesViewModel: Error fetching gates: \(error)"); DispatchQueue.main.async { self.gates = [] } }
+        print("GatesViewModel: Fetching gates...")
+        let request: NSFetchRequest<GateStatus> = GateStatus.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \GateStatus.statusChangeDate, ascending: false)]
+        
+        do {
+            let fetchedGates = try viewContext.fetch(request)
+            DispatchQueue.main.async {
+                self.gates = fetchedGates
+                print("GatesViewModel: Fetched \(fetchedGates.count) gates:")
+                for (index, gate) in fetchedGates.enumerated() {
+                    print("  Gate \(index + 1): \(gate.gateRank ?? "?")-Rank, \(gate.gateType ?? "?"), Status: \(gate.status ?? "?")")
+                }
+            }
+        } catch {
+            print("GatesViewModel: Error fetching gates: \(error)")
+            DispatchQueue.main.async {
+                self.gates = []
+                self.actionErrorMessage = "Failed to load gates."
+            }
+        }
     }
 
     // --- Actions ---
@@ -74,12 +106,28 @@ class GatesViewModel: ObservableObject {
     }
 
     func deleteGate(gate: GateStatus) {
+        print("GatesViewModel: Attempting to delete gate \(gate.id?.uuidString ?? "unknown")")
+        
+        if gate.status != "Cleared" {
+            print("GatesViewModel: Cannot delete gate - not in 'Cleared' status")
+            DispatchQueue.main.async {
+                self.actionErrorMessage = "Only cleared gates can be deleted"
+            }
+            return
+        }
+        
         viewContext.delete(gate)
+        
         do {
             try viewContext.save()
-            fetchGates() // Refresh the list
+            print("GatesViewModel: Gate deleted successfully")
+            
+            // Get the updated list of gates
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.fetchGates()
+            }
         } catch {
-            print("Error deleting gate: \(error)")
+            print("GatesViewModel: Error deleting gate: \(error)")
             DispatchQueue.main.async {
                 self.actionErrorMessage = "Failed to delete gate."
             }

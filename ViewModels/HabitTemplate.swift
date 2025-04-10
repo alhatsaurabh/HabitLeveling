@@ -4,6 +4,18 @@
 import Foundation
 import SwiftUI // Needed for Color if we add it later
 
+// Define StatCategory locally since imports are not working correctly
+enum StatCategory: String, CaseIterable, Identifiable {
+    case mind = "Mind"
+    case body = "Body"
+    case skill = "Skill"
+    case discipline = "Discipline"
+    case wellbeing = "Wellbeing"
+    case other = "Other"
+    
+    var id: String { self.rawValue }
+}
+
 // Struct to represent a predefined habit template
 struct HabitTemplate: Identifiable, Hashable {
     let id = UUID() // Make it identifiable for lists

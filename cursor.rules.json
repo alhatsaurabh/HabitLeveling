@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "project": {
+    "name": "HabitLeveling",
+    "description": "A gamified habit tracking app with RPG elements focused on habit building. Features include a smart calendar, pomodoro timer, and a narrative shelter-building system with shop functionality."
+  },
+  "codebase": {
+    "architecture": {
+      "patterns": {
+        "models": "CoreData entities are defined in HabitLeveling.xcdatamodeld with extensions in Models/",
+        "views": "SwiftUI views are in Views/",
+        "viewModels": "ViewModels/ contains business logic connecting Models and Views",
+        "managers": "Managers/ contains singleton managers for different functionality",
+        "calendar": "Calendar view components for tracking habit history",
+        "timer": "Pomodoro timer functionality and components",
+        "narrative": "Shelter building story system and character mechanics",
+        "shop": "Shop interface and item purchasing logic"
+      }
+    },
+    "bestPractices": [
+      "Use StatCategory from StatTypes.swift when referring to habit categories",
+      "Ensure habit logs are correctly associated with habits via habitID",
+      "When parsing strings, use robust methods that check for existence of values",
+      "Keep UI components simple and focused on core functionality",
+      "Provide visual feedback for all user actions",
+      "Link narrative progression directly to habit completion",
+      "Use consistent visual language across all features"
+    ],
+    "avoidPatterns": [
+      "Duplicating enum definitions (especially StatCategory)",
+      "Directly manipulating Core Data without using PersistenceController",
+      "Creating overly complex systems that are hard to maintain",
+      "Adding features that distract from the core habit-building purpose",
+      "Building UI that requires excessive user interaction"
+    ]
+  },
+  "features": {
+    "core": [
+      "Habit tracking and completion",
+      "XP and leveling system",
+      "Gates and artifacts"
+    ],
+    "inProgress": [
+      "Smart calendar with habit history visualization",
+      "Pomodoro timer for focused sessions"
+    ],
+    "planned": [
+      "Shelter building narrative system",
+      "Character rescue mechanics",
+      "Shop for spending mana crystals"
+    ],
+    "integration": [
+      "Calendar milestones showing story progress",
+      "Bonus rewards for pomodoro usage",
+      "Achievement showcase for completed progress"
+    ]
+  },
+  "priorities": {
+    "immediate": [
+      "Fix any remaining bugs in core functionality",
+      "Implement smart calendar feature",
+      "Add pomodoro timer functionality"
+    ],
+    "high": [
+      "Design shelter building narrative system",
+      "Create shop interface and mechanics",
+      "Ensure smooth integration between features"
+    ],
+    "future": [
+      "Advanced visual effects and animations",
+      "Performance optimizations",
+      "Additional story content"
+    ]
+  },
+  "knownIssues": [
+    {
+      "id": "STATS-001",
+      "description": "StatCategory enum was duplicated across files, causing type resolution issues",
+      "status": "FIXED"
+    },
+    {
+      "id": "GATE-001",
+      "description": "Incorrect property name used in category lookup predicate",
+      "status": "FIXED"
+    },
+    {
+      "id": "REWARDS-001",
+      "description": "Gate rewards parsing was unreliable, causing rewards to not be granted",
+      "status": "FIXED"
+    }
+  ]
+} 

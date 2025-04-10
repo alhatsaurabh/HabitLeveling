@@ -17,25 +17,6 @@ struct GatesView: View {
 
                 ScrollView {
                     VStack(spacing: 20) {
-                        // Mana Crystals Display
-                        HStack {
-                            Image(systemName: "circle.hexagongrid.fill")
-                                .imageScale(.small)
-                                .foregroundColor(ThemeColors.secondaryAccent)
-                            Text("\(viewModel.manaCrystals)")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(ThemeColors.secondaryAccent)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(ThemeColors.panelBackground.opacity(0.85))
-                                .blur(radius: 3)
-                        )
-                        .padding(.top)
-
                         if let errorMessage = viewModel.actionErrorMessage {
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")
@@ -70,29 +51,22 @@ struct GatesView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 50)
                         } else {
-                            ForEach(viewModel.gates, id: \.self) { gate in
-                                GateRowView(gate: gate, viewModel: viewModel)
-                                    .padding(.horizontal)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                        if gate.status == "Cleared" {
-                                            Button(role: .destructive) {
-                                                viewModel.deleteGate(gate: gate)
-                                            } label: {
-                                                Label("Delete", systemImage: "trash")
+                            // Display gates in a LazyVStack instead of List for better compatibility
+                            LazyVStack(spacing: 12) {
+                                ForEach(viewModel.gates, id: \.self) { gate in
+                                    GateRowView(gate: gate, viewModel: viewModel)
+                                        .padding(.horizontal)
+                                        .contextMenu {
+                                            if gate.status == "Cleared" {
+                                                Button(role: .destructive) {
+                                                    viewModel.deleteGate(gate: gate)
+                                                } label: {
+                                                    Label("Delete", systemImage: "trash")
+                                                }
                                             }
-                                            .tint(.red)
                                         }
-                                    }
-                                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                        if gate.status == "Cleared" {
-                                            Button {
-                                                viewModel.deleteGate(gate: gate)
-                                            } label: {
-                                                Label("Delete", systemImage: "trash")
-                                            }
-                                            .tint(.red)
-                                        }
-                                    }
+                                        .modifier(SwipeToDelete(gate: gate, viewModel: viewModel))
+                                }
                             }
                         }
                     }
@@ -100,6 +74,23 @@ struct GatesView: View {
                 }
             }
             .navigationTitle("Gates")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    // Mana Crystals Display
+                    HStack {
+                        Image(systemName: "circle.hexagongrid.fill")
+                            .imageScale(.small)
+                            .foregroundColor(ThemeColors.secondaryAccent)
+                        Text("\(viewModel.manaCrystals)")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(ThemeColors.secondaryAccent)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(ThemeColors.panelBackground.opacity(0.7)))
+                }
+            }
             .onAppear {
                 viewModel.fetchGates()
                 viewModel.fetchUserProfile()
@@ -300,6 +291,62 @@ struct GateRowView: View {
         case "Analyzed": return ThemeColors.warning
         case "Cleared": return ThemeColors.success
         default: return ThemeColors.primaryText
+        }
+    }
+}
+
+// MARK: - SwipeToDelete Modifier
+struct SwipeToDelete: ViewModifier {
+    let gate: GateStatus
+    let viewModel: GatesViewModel
+    @State private var offset: CGFloat = 0
+    @State private var isSwiping = false
+    
+    private let deleteThreshold: CGFloat = -100
+    
+    func body(content: Content) -> some View {
+        ZStack {
+            // Delete background
+            if gate.status == "Cleared" && offset < -20 {
+                HStack {
+                    Spacer()
+                    Image(systemName: "trash")
+                        .foregroundColor(.white)
+                        .padding(.trailing, 25)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.red.opacity(0.8))
+                .cornerRadius(15)
+                .padding(.horizontal)
+            }
+            
+            // Content
+            content
+                .offset(x: offset, y: 0)
+                .gesture(
+                    DragGesture()
+                        .onChanged { gesture in
+                            if gate.status == "Cleared" {
+                                withAnimation {
+                                    self.offset = gesture.translation.width
+                                    self.isSwiping = true
+                                }
+                            }
+                        }
+                        .onEnded { gesture in
+                            if gate.status == "Cleared" && gesture.translation.width < deleteThreshold {
+                                // Delete gate when swipe far enough
+                                withAnimation {
+                                    viewModel.deleteGate(gate: gate)
+                                }
+                            }
+                            // Reset offset
+                            withAnimation {
+                                self.offset = 0
+                                self.isSwiping = false
+                            }
+                        }
+                )
         }
     }
 }

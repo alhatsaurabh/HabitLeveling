@@ -1,10 +1,19 @@
 import Foundation
 import CoreData
 
-// Ensure StatCategory enum is accessible
-// enum StatCategory: String, CaseIterable, Identifiable { ... }
-
+// The StatCategory enum is defined in Models/StatTypes.swift
+// Add a simple import since we're in the same module
+// Uncomment this local definition if import fails
 struct ArtifactSeeder {
+    // Local enum for use in seeding
+    enum StatCategory: String {
+        case mind = "Mind"
+        case body = "Body"
+        case skill = "Skill"
+        case discipline = "Discipline"
+        case wellbeing = "Wellbeing"
+        case other = "Other"
+    }
 
     static func seedInitialArtifacts(context: NSManagedObjectContext) {
         let fetchRequest: NSFetchRequest<Artifact> = Artifact.fetchRequest()
@@ -22,8 +31,6 @@ struct ArtifactSeeder {
 
         print("INFO: Seeding initial artifacts...")
 
-        // --- Sample Artifact Definitions (Corrected Acquisition Conditions) ---
-
         // Artifact 1: Common Body Boost
         let artifact1 = Artifact(context: context)
         artifact1.id = UUID()
@@ -33,7 +40,6 @@ struct ArtifactSeeder {
         artifact1.rarity = "Common"
         artifact1.statBoostType = StatCategory.body.rawValue
         artifact1.statBoostValue = 1.0
-        // --- CORRECTED Condition ---
         artifact1.acquisitionCondition = "Complete 5 Body-based habits."
 
         // Artifact 2: Uncommon Skill Boost
@@ -45,7 +51,7 @@ struct ArtifactSeeder {
         artifact2.rarity = "Uncommon"
         artifact2.statBoostType = StatCategory.skill.rawValue
         artifact2.statBoostValue = 2.0
-        artifact2.acquisitionCondition = "Log 10 Skill-based habit completions." // Correct
+        artifact2.acquisitionCondition = "Log 10 Skill-based habit completions."
 
         // Artifact 3: Rare Mind Boost
         let artifact3 = Artifact(context: context)
@@ -56,7 +62,6 @@ struct ArtifactSeeder {
         artifact3.rarity = "Rare"
         artifact3.statBoostType = StatCategory.mind.rawValue
         artifact3.statBoostValue = 5.0
-        // --- CORRECTED Condition ---
         artifact3.acquisitionCondition = "Reach Level 10."
 
         // Artifact 4: No Stat Boost (Badge)
@@ -68,12 +73,12 @@ struct ArtifactSeeder {
         artifact4.rarity = "Common"
         artifact4.statBoostType = nil
         artifact4.statBoostValue = 0.0
-        artifact4.acquisitionCondition = "Complete your first habit." // Correct
+        artifact4.acquisitionCondition = "Complete your first habit."
 
-        // --- Save the Context ---
+        // Save the Context
         do {
             try context.save()
-            print("SUCCESS: Successfully seeded \(4) artifacts with corrected conditions.")
+            print("SUCCESS: Successfully seeded \(4) artifacts.")
         } catch {
             let nsError = error as NSError
             print("FATAL ERROR: Unresolved error during artifact seeding \(nsError), \(nsError.userInfo)")
