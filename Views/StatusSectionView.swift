@@ -3,13 +3,16 @@
 // Dependencies: DashboardViewModel, ThemeColors, SoloPanelModifier,
 //               CombinedLevelEssenceView, StatDistributionBarView
 // Update: Redesigned layout for Solo Leveling aesthetic.
+// Update 2: Added swipe gesture to show the calendar view
 
 import SwiftUI
 
 struct StatusSectionView: View {
     // Accepts the DashboardViewModel to display its data
     @ObservedObject var viewModel: DashboardViewModel
-
+    @State private var showingCalendar: Bool = false
+    @State private var dragOffset: CGFloat = 0
+    
     // Calculate progress for the CombinedLevelEssenceView
     private var xpProgress: Double {
         guard viewModel.xpGoal > 0 else { return 0.0 }
@@ -18,6 +21,46 @@ struct StatusSectionView: View {
     }
 
     var body: some View {
+        ZStack {
+            // Mini Calendar View (shown when swiped)
+            if showingCalendar {
+                MiniCalendarView()
+            }
+            
+            // Status Panel (main view)
+            statusPanel
+                .offset(x: showingCalendar ? -UIScreen.main.bounds.width : 0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showingCalendar)
+        }
+        .gesture(
+            DragGesture()
+                .onChanged { gesture in
+                    if !showingCalendar {
+                        // Only allow left swipe (negative values) when showing status
+                        self.dragOffset = min(0, gesture.translation.width)
+                    } else {
+                        // Only allow right swipe (positive values) when showing calendar
+                        self.dragOffset = max(0, gesture.translation.width)
+                    }
+                }
+                .onEnded { gesture in
+                    // Determine if we should switch views based on drag distance
+                    if !showingCalendar && gesture.translation.width < -50 {
+                        // Swiped left enough to show calendar
+                        self.showingCalendar = true
+                    } else if showingCalendar && gesture.translation.width > 50 {
+                        // Swiped right enough to show status
+                        self.showingCalendar = false
+                    }
+                    
+                    // Reset drag offset
+                    self.dragOffset = 0
+                }
+        )
+    }
+    
+    // Status panel content
+    private var statusPanel: some View {
         ZStack(alignment: .topTrailing) { // Main container with mana overlay
             VStack(alignment: .leading, spacing: 15) {
                 // Top Row: Level/XP + Rank/Title
@@ -72,6 +115,19 @@ struct StatusSectionView: View {
                         iconColor: ThemeColors.success
                     )
                 }
+                
+                // Swipe indicator
+                HStack {
+                    Spacer()
+                    Image(systemName: "chevron.left")
+                        .font(.caption)
+                        .foregroundColor(ThemeColors.secondaryText.opacity(0.7))
+                    Text("Swipe for calendar")
+                        .font(.caption)
+                        .foregroundColor(ThemeColors.secondaryText.opacity(0.7))
+                    Spacer()
+                }
+                .padding(.top, 5)
             }
             .padding(20)
 
@@ -101,6 +157,7 @@ struct StatusSectionView: View {
                 .stroke(ThemeColors.primaryAccent.opacity(0.3), lineWidth: 1)
         )
         .padding(.horizontal)
+        .offset(x: dragOffset) // Apply drag offset while dragging
     }
 }
 

@@ -85,6 +85,7 @@
 				AddEditHabitSubViews.swift,
 				AddEditHabitView.swift,
 				ArtifactEarnedView.swift,
+				CalendarView.swift,
 				CircularProgressView.swift,
 				CombinedLevelEssenceView.swift,
 				DashboardView.swift,

@@ -1,11 +1,13 @@
 // MARK: - File: CalendarView.swift
 // Purpose: Displays a smart calendar for tracking habit progress with heat map visualization.
+// Update: Added close button for modal presentation
 
 import SwiftUI
 import CoreData
 
 struct CalendarView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = CalendarViewModel()
     @State private var selectedCategory: StatCategory? = nil
     
@@ -172,11 +174,22 @@ struct CalendarView: View {
                 }
             }
             .navigationTitle("Progress Calendar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(ThemeColors.secondaryText)
+                            .font(.headline)
+                    }
+                }
+            }
             .onAppear {
                 viewModel.loadAllCompletions(context: viewContext)
             }
         }
-        .navigationViewStyle(.stack)
     }
     
     // Helper function to get icon for habit category

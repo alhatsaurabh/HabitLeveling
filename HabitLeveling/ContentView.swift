@@ -14,12 +14,7 @@ struct ContentView: View {
                 .tabItem {
                     Label("Habits", systemImage: "list.bullet")
                 }
-                
-            CalendarView()
-                .tabItem {
-                    Label("Calendar", systemImage: "calendar")
-                }
-
+            
             GatesView()
                 .tabItem {
                     Label("Gates", systemImage: "shield.lefthalf.filled.slash")
