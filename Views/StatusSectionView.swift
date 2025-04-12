@@ -28,9 +28,9 @@ struct StatusSectionView: View {
     
     // Enum for panel types
     private enum PanelType: Int {
-        case status = 0
-        case calendar = 1
-        case pomodoro = 2
+        case pomodoro = 0
+        case status = 1
+        case calendar = 2
     }
     
     // Calculate progress for the CombinedLevelEssenceView
@@ -54,21 +54,21 @@ struct StatusSectionView: View {
                 } else {
                     // Show pomodoro panel
                     pomodoroPanel
-                        .transition(.move(edge: .trailing))
+                        .transition(.move(edge: .leading))
                 }
             }
             
             // Navigation dots - 3 dots now
             HStack(spacing: 4) {
                 Circle()
+                    .fill(currentPanel == .pomodoro ? ThemeColors.primaryAccent : ThemeColors.secondaryText.opacity(0.7))
+                    .frame(width: currentPanel == .pomodoro ? 6 : 4, height: currentPanel == .pomodoro ? 6 : 4)
+                Circle()
                     .fill(currentPanel == .status ? ThemeColors.primaryAccent : ThemeColors.secondaryText.opacity(0.7))
                     .frame(width: currentPanel == .status ? 6 : 4, height: currentPanel == .status ? 6 : 4)
                 Circle()
                     .fill(currentPanel == .calendar ? ThemeColors.primaryAccent : ThemeColors.secondaryText.opacity(0.7))
                     .frame(width: currentPanel == .calendar ? 6 : 4, height: currentPanel == .calendar ? 6 : 4)
-                Circle()
-                    .fill(currentPanel == .pomodoro ? ThemeColors.primaryAccent : ThemeColors.secondaryText.opacity(0.7))
-                    .frame(width: currentPanel == .pomodoro ? 6 : 4, height: currentPanel == .pomodoro ? 6 : 4)
             }
             .padding(.top, 8)
         }
@@ -79,9 +79,11 @@ struct StatusSectionView: View {
                     let threshold: CGFloat = 50
                     
                     if gesture.translation.width < -threshold {
-                        // Swiped left - move to next panel
+                        // Swiped left - move to next panel (right)
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                             switch currentPanel {
+                            case .pomodoro:
+                                currentPanel = .status
                             case .status:
                                 currentPanel = .calendar
                                 // Load calendar data
@@ -89,23 +91,21 @@ struct StatusSectionView: View {
                                     calendarViewModel.loadAllCompletions(context: viewContext)
                                 }
                             case .calendar:
-                                currentPanel = .pomodoro
-                            case .pomodoro:
                                 // Already at last panel, do nothing
                                 break
                             }
                         }
                     } else if gesture.translation.width > threshold {
-                        // Swiped right - move to previous panel
+                        // Swiped right - move to previous panel (left)
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                             switch currentPanel {
-                            case .status:
+                            case .pomodoro:
                                 // Already at first panel, do nothing
                                 break
+                            case .status:
+                                currentPanel = .pomodoro
                             case .calendar:
                                 currentPanel = .status
-                            case .pomodoro:
-                                currentPanel = .calendar
                             }
                         }
                     }
@@ -116,6 +116,9 @@ struct StatusSectionView: View {
                 .environment(\.managedObjectContext, viewContext)
         }
         .onAppear {
+            // Set default panel to status on appear
+            currentPanel = .status
+            
             // Initial load
             calendarViewModel.loadAllCompletions(context: viewContext)
             
@@ -141,6 +144,22 @@ struct StatusSectionView: View {
                     .foregroundColor(ThemeColors.primaryText)
                 
                 Spacer()
+                
+                // Help/Info button
+                Button(action: {
+                    // Show tooltip about settings
+                    showPomodoroSettings = true
+                }) {
+                    Image(systemName: "gearshape.circle.fill")
+                        .font(.headline)
+                        .foregroundColor(ThemeColors.primaryAccent)
+                        .overlay(
+                            Circle()
+                                .stroke(ThemeColors.primaryAccent.opacity(0.7), lineWidth: 1.5)
+                                .scaleEffect(1.3)
+                        )
+                }
+                .padding(.trailing, 8)
                 
                 // History button
                 Button(action: {
@@ -262,8 +281,8 @@ struct StatusSectionView: View {
                         showPomodoroSettings = true
                     }) {
                         HStack {
-                            Image(systemName: "gear")
-                            Text("Settings")
+                            Image(systemName: "gearshape")
+                            Text("Timer Settings")
                         }
                         .font(.subheadline)
                         .fontWeight(.medium)
