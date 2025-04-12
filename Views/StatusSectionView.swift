@@ -4,14 +4,34 @@
 //               CombinedLevelEssenceView, StatDistributionBarView
 // Update: Redesigned layout for Solo Leveling aesthetic.
 // Update 2: Added swipe gesture to show the calendar view
+// Update 3: Added Pomodoro timer panel for productivity tracking
 
 import SwiftUI
+import CoreData
 
 struct StatusSectionView: View {
     // Accepts the DashboardViewModel to display its data
     @ObservedObject var viewModel: DashboardViewModel
-    @State private var showingCalendar: Bool = false
-    @State private var dragOffset: CGFloat = 0
+    @State private var currentPanel: PanelType = .status
+    @State private var showFullCalendar: Bool = false
+    @State private var showPomodoroSettings: Bool = false
+    @State private var showPomodoroHistory: Bool = false
+    
+    // Environment
+    @Environment(\.managedObjectContext) private var viewContext
+    
+    // Calendar view model
+    @StateObject private var calendarViewModel = CalendarViewModel()
+    
+    // Pomodoro Timer State
+    @StateObject private var pomodoroViewModel = PomodoroViewModel()
+    
+    // Enum for panel types
+    private enum PanelType: Int {
+        case status = 0
+        case calendar = 1
+        case pomodoro = 2
+    }
     
     // Calculate progress for the CombinedLevelEssenceView
     private var xpProgress: Double {
@@ -21,42 +41,379 @@ struct StatusSectionView: View {
     }
 
     var body: some View {
-        ZStack {
-            // Mini Calendar View (shown when swiped)
-            if showingCalendar {
-                MiniCalendarView()
+        VStack(spacing: 0) {
+            ZStack {
+                if currentPanel == .status {
+                    // Show status panel
+                    statusPanel
+                        .transition(.move(edge: .leading))
+                } else if currentPanel == .calendar {
+                    // Show calendar panel
+                    calendarPanel
+                        .transition(.move(edge: .trailing))
+                } else {
+                    // Show pomodoro panel
+                    pomodoroPanel
+                        .transition(.move(edge: .trailing))
+                }
             }
             
-            // Status Panel (main view)
-            statusPanel
-                .offset(x: showingCalendar ? -UIScreen.main.bounds.width : 0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showingCalendar)
+            // Navigation dots - 3 dots now
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(currentPanel == .status ? ThemeColors.primaryAccent : ThemeColors.secondaryText.opacity(0.7))
+                    .frame(width: currentPanel == .status ? 6 : 4, height: currentPanel == .status ? 6 : 4)
+                Circle()
+                    .fill(currentPanel == .calendar ? ThemeColors.primaryAccent : ThemeColors.secondaryText.opacity(0.7))
+                    .frame(width: currentPanel == .calendar ? 6 : 4, height: currentPanel == .calendar ? 6 : 4)
+                Circle()
+                    .fill(currentPanel == .pomodoro ? ThemeColors.primaryAccent : ThemeColors.secondaryText.opacity(0.7))
+                    .frame(width: currentPanel == .pomodoro ? 6 : 4, height: currentPanel == .pomodoro ? 6 : 4)
+            }
+            .padding(.top, 8)
         }
         .gesture(
             DragGesture()
-                .onChanged { gesture in
-                    if !showingCalendar {
-                        // Only allow left swipe (negative values) when showing status
-                        self.dragOffset = min(0, gesture.translation.width)
-                    } else {
-                        // Only allow right swipe (positive values) when showing calendar
-                        self.dragOffset = max(0, gesture.translation.width)
-                    }
-                }
                 .onEnded { gesture in
-                    // Determine if we should switch views based on drag distance
-                    if !showingCalendar && gesture.translation.width < -50 {
-                        // Swiped left enough to show calendar
-                        self.showingCalendar = true
-                    } else if showingCalendar && gesture.translation.width > 50 {
-                        // Swiped right enough to show status
-                        self.showingCalendar = false
-                    }
+                    // Determine swipe direction and distance
+                    let threshold: CGFloat = 50
                     
-                    // Reset drag offset
-                    self.dragOffset = 0
+                    if gesture.translation.width < -threshold {
+                        // Swiped left - move to next panel
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            switch currentPanel {
+                            case .status:
+                                currentPanel = .calendar
+                                // Load calendar data
+                                DispatchQueue.main.async {
+                                    calendarViewModel.loadAllCompletions(context: viewContext)
+                                }
+                            case .calendar:
+                                currentPanel = .pomodoro
+                            case .pomodoro:
+                                // Already at last panel, do nothing
+                                break
+                            }
+                        }
+                    } else if gesture.translation.width > threshold {
+                        // Swiped right - move to previous panel
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            switch currentPanel {
+                            case .status:
+                                // Already at first panel, do nothing
+                                break
+                            case .calendar:
+                                currentPanel = .status
+                            case .pomodoro:
+                                currentPanel = .calendar
+                            }
+                        }
+                    }
                 }
         )
+        .fullScreenCover(isPresented: $showFullCalendar) {
+            CalendarView()
+                .environment(\.managedObjectContext, viewContext)
+        }
+        .onAppear {
+            // Initial load
+            calendarViewModel.loadAllCompletions(context: viewContext)
+            
+            // Register for habit completion notifications
+            NotificationCenter.default.addObserver(forName: .habitCompleted, object: nil, queue: .main) { _ in
+                calendarViewModel.loadAllCompletions(context: viewContext)
+            }
+        }
+        .onChange(of: calendarViewModel.selectedDay) { _ in
+            // Refresh the view when the selected day changes
+            calendarViewModel.loadAllCompletions(context: viewContext)
+        }
+    }
+    
+    // Pomodoro panel content
+    private var pomodoroPanel: some View {
+        VStack(spacing: 0) {
+            // Fixed Header
+            HStack {
+                Text("Pomodoro Timer")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(ThemeColors.primaryText)
+                
+                Spacer()
+                
+                // History button
+                Button(action: {
+                    showPomodoroHistory = true
+                }) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.headline)
+                        .foregroundColor(ThemeColors.secondaryText)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .padding(.top, 4)
+            .background(ThemeColors.panelBackground.opacity(0.3))
+
+            // Fixed Content Area
+            VStack(spacing: 12) {
+                // Timer display
+                VStack(spacing: 8) {
+                    // Timer circle
+                    ZStack {
+                        Circle()
+                            .stroke(ThemeColors.secondaryText.opacity(0.2), lineWidth: 4)
+                            .frame(width: 150, height: 150)
+                        
+                        Circle()
+                            .trim(from: 0, to: pomodoroViewModel.progress)
+                            .stroke(timerColor(), lineWidth: 4)
+                            .frame(width: 150, height: 150)
+                            .rotationEffect(.degrees(-90))
+                        
+                        VStack {
+                            Text(pomodoroViewModel.timeRemainingFormatted)
+                                .font(.system(size: 36, weight: .bold, design: .monospaced))
+                                .foregroundColor(ThemeColors.primaryText)
+                            
+                            Text(pomodoroViewModel.isRunning ? "Running" : "Paused")
+                                .font(.caption)
+                                .foregroundColor(ThemeColors.secondaryText)
+                        }
+                    }
+                    .padding(.top, 8)
+                    
+                    // Session type
+                    Text(pomodoroViewModel.currentSession.rawValue)
+                        .font(.headline)
+                        .foregroundColor(timerColor())
+                    
+                    // Control buttons
+                    HStack(spacing: 30) {
+                        Button(action: {
+                            pomodoroViewModel.resetTimer()
+                        }) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.title2)
+                                .foregroundColor(ThemeColors.secondaryText)
+                        }
+                        
+                        Button(action: {
+                            pomodoroViewModel.toggleTimer()
+                        }) {
+                            Image(systemName: pomodoroViewModel.isRunning ? "pause.fill" : "play.fill")
+                                .font(.title)
+                                .foregroundColor(ThemeColors.primaryAccent)
+                        }
+                        
+                        Button(action: {
+                            pomodoroViewModel.skipSession()
+                        }) {
+                            Image(systemName: "forward.fill")
+                                .font(.title2)
+                                .foregroundColor(ThemeColors.secondaryText)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+                
+                Divider()
+                    .background(ThemeColors.secondaryText.opacity(0.3))
+                    .padding(.horizontal)
+                
+                // Notes Section
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Session Notes")
+                        .font(.subheadline)
+                        .foregroundColor(ThemeColors.secondaryText)
+                    
+                    TextField("What are you working on?", text: $pomodoroViewModel.sessionNotes)
+                        .font(.subheadline)
+                        .padding(8)
+                        .background(ThemeColors.panelBackground.opacity(0.6))
+                        .cornerRadius(8)
+                }
+                .padding(.horizontal)
+                
+                // Actions Row: Task Complete + Settings
+                HStack {
+                    // Task Complete Button
+                    Button(action: {
+                        pomodoroViewModel.saveCompletedSession(taskCompleted: true)
+                    }) {
+                        HStack {
+                            Image(systemName: "checkmark.circle")
+                            Text("Complete")
+                        }
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(ThemeColors.success.opacity(0.2))
+                        )
+                        .foregroundColor(ThemeColors.success)
+                    }
+                    
+                    // Settings button
+                    Button(action: {
+                        showPomodoroSettings = true
+                    }) {
+                        HStack {
+                            Image(systemName: "gear")
+                            Text("Settings")
+                        }
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(ThemeColors.primaryAccent.opacity(0.2))
+                        )
+                        .foregroundColor(ThemeColors.primaryAccent)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 16)
+            }
+            .padding(.top, 8)
+            .frame(height: 290)
+        }
+        .background(ThemeColors.panelBackground.opacity(0.3))
+        .clipShape(RoundedRectangle(cornerRadius: 15))
+        .overlay(
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(ThemeColors.primaryAccent.opacity(0.3), lineWidth: 1)
+        )
+        .padding(.horizontal)
+        .sheet(isPresented: $showPomodoroSettings) {
+            PomodoroSettingsView(pomodoroViewModel: pomodoroViewModel)
+        }
+        .sheet(isPresented: $showPomodoroHistory) {
+            PomodoroHistoryView()
+        }
+    }
+    
+    // Helper function for timer color
+    private func timerColor() -> Color {
+        switch pomodoroViewModel.currentSession {
+        case .focus:
+            return ThemeColors.primaryAccent
+        case .shortBreak:
+            return ThemeColors.secondaryAccent
+        case .longBreak:
+            return ThemeColors.success
+        }
+    }
+    
+    // Calendar panel content
+    private var calendarPanel: some View {
+        VStack(spacing: 0) {
+            // Fixed Header
+            HStack {
+                Text("Recent Progress")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(ThemeColors.primaryText)
+                
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .padding(.top, 4)
+            .background(ThemeColors.panelBackground.opacity(0.3))
+
+            // Fixed Content Area
+            VStack(spacing: 12) {
+                // Mini heat map calendar
+                VStack(spacing: 8) {
+                    // Month display
+                    Text(calendarViewModel.currentMonthTitle)
+                        .font(.subheadline)
+                        .foregroundColor(ThemeColors.secondaryText)
+                    
+                    // Weekday headers
+                    HStack {
+                        ForEach(calendarViewModel.weekdaySymbols, id: \.self) { symbol in
+                            Text(symbol)
+                                .font(.system(size: 10))
+                                .fontWeight(.medium)
+                                .foregroundColor(ThemeColors.secondaryText)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    
+                    // Calendar grid
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 4) {
+                        ForEach(calendarViewModel.days) { day in
+                            MiniCalendarDayCell(day: day, completionIntensity: calendarViewModel.completionIntensity(for: day.date))
+                                .onTapGesture {
+                                    calendarViewModel.selectDay(day, context: viewContext)
+                                }
+                        }
+                    }
+                }
+                .padding(.horizontal)
+                
+                // Stats summary
+                HStack {
+                    VStack(alignment: .center) {
+                        Text("\(calendarViewModel.totalCompletions)")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(ThemeColors.primaryText)
+                        Text("Total")
+                            .font(.system(size: 10))
+                            .foregroundColor(ThemeColors.secondaryText)
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    Divider()
+                        .frame(height: 30)
+                        .background(ThemeColors.secondaryText.opacity(0.3))
+                    
+                    VStack(alignment: .center) {
+                        Text("\(calendarViewModel.mostActiveDay.0)")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(ThemeColors.primaryText)
+                        Text("Best Day")
+                            .font(.system(size: 10))
+                            .foregroundColor(ThemeColors.secondaryText)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.horizontal)
+                
+                // View Full Calendar button
+                Button(action: {
+                    showFullCalendar = true
+                }) {
+                    Text("View Full Calendar")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(ThemeColors.primaryAccent.opacity(0.2))
+                        )
+                        .foregroundColor(ThemeColors.primaryAccent)
+                }
+                .padding(.horizontal)
+                .padding(.bottom, 16)
+            }
+            .padding(.top, 8)
+            .frame(height: 320)
+        }
+        .background(ThemeColors.panelBackground.opacity(0.3))
+        .clipShape(RoundedRectangle(cornerRadius: 15))
+        .overlay(
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(ThemeColors.primaryAccent.opacity(0.3), lineWidth: 1)
+        )
+        .padding(.horizontal)
     }
     
     // Status panel content
@@ -72,6 +429,7 @@ struct StatusSectionView: View {
                         essenceState: viewModel.essenceCoreState
                     )
                     .frame(width: 100, height: 100)
+                    .padding(.top, 4) // Add padding above the circular indicator
 
                     // User Info
                     VStack(alignment: .leading, spacing: 2) {
@@ -116,20 +474,9 @@ struct StatusSectionView: View {
                     )
                 }
                 
-                // Swipe indicator
-                HStack {
-                    Spacer()
-                    Image(systemName: "chevron.left")
-                        .font(.caption)
-                        .foregroundColor(ThemeColors.secondaryText.opacity(0.7))
-                    Text("Swipe for calendar")
-                        .font(.caption)
-                        .foregroundColor(ThemeColors.secondaryText.opacity(0.7))
-                    Spacer()
-                }
-                .padding(.top, 5)
             }
             .padding(20)
+            .frame(height: 260)
 
             // Mana Crystals Overlay
             HStack(spacing: 4) {
@@ -157,7 +504,65 @@ struct StatusSectionView: View {
                 .stroke(ThemeColors.primaryAccent.opacity(0.3), lineWidth: 1)
         )
         .padding(.horizontal)
-        .offset(x: dragOffset) // Apply drag offset while dragging
+    }
+}
+
+// MARK: - Mini Calendar Day Cell
+struct MiniCalendarDayCell: View {
+    let day: CalendarDay
+    let completionIntensity: Double // 0.0 to 1.0
+    
+    var body: some View {
+        ZStack {
+            // Background
+            RoundedRectangle(cornerRadius: 4)
+                .fill(
+                    day.isToday ? ThemeColors.secondaryAccent.opacity(0.3) :
+                    !day.isCurrentMonth ? ThemeColors.panelBackground.opacity(0.3) : Color.clear
+                )
+            
+            // Heat map background
+            if completionIntensity > 0 {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(heatMapColor(for: completionIntensity))
+            }
+            
+            // Day content
+            Text(day.number)
+                .font(.system(size: 10, weight: day.isToday ? .bold : .regular))
+                .foregroundColor(dayTextColor())
+        }
+        .frame(height: 24)
+        .overlay(
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(day.isSelected ? ThemeColors.primaryAccent : Color.clear, lineWidth: 1)
+        )
+    }
+    
+    // Helper function to determine text color based on state
+    private func dayTextColor() -> Color {
+        if day.isToday {
+            return ThemeColors.primaryText
+        } else if !day.isCurrentMonth {
+            return ThemeColors.secondaryText.opacity(0.5)
+        } else {
+            return ThemeColors.primaryText
+        }
+    }
+    
+    // Helper function to get heat map color based on intensity
+    private func heatMapColor(for intensity: Double) -> Color {
+        if intensity <= 0 {
+            return Color.clear
+        } else if intensity < 0.25 {
+            return Color.green.opacity(0.2)
+        } else if intensity < 0.5 {
+            return Color.green.opacity(0.4)
+        } else if intensity < 0.75 {
+            return Color.green.opacity(0.6)
+        } else {
+            return Color.green.opacity(0.8)
+        }
     }
 }
 
