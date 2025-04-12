@@ -8,6 +8,9 @@
 
 import SwiftUI
 import CoreData
+#if os(iOS)
+import UIKit
+#endif
 
 struct StatusSectionView: View {
     // Accepts the DashboardViewModel to display its data
@@ -25,6 +28,9 @@ struct StatusSectionView: View {
     
     // Pomodoro Timer State
     @StateObject private var pomodoroViewModel = PomodoroViewModel()
+    
+    // State for button animation
+    @State private var showGreenCheck: Bool = false
     
     // Enum for panel types
     private enum PanelType: Int {
@@ -46,17 +52,34 @@ struct StatusSectionView: View {
                 if currentPanel == .status {
                     // Show status panel
                     statusPanel
-                        .transition(.move(edge: .leading))
+                        .transition(
+                            .asymmetric(
+                                insertion: .move(edge: currentPanel == .pomodoro ? .trailing : .leading),
+                                removal: .move(edge: currentPanel == .pomodoro ? .trailing : .leading)
+                            )
+                        )
                 } else if currentPanel == .calendar {
                     // Show calendar panel
                     calendarPanel
-                        .transition(.move(edge: .trailing))
+                        .transition(
+                            .asymmetric(
+                                insertion: .move(edge: .trailing),
+                                removal: .move(edge: .trailing)
+                            )
+                        )
                 } else {
                     // Show pomodoro panel
                     pomodoroPanel
-                        .transition(.move(edge: .leading))
+                        .transition(
+                            .asymmetric(
+                                insertion: .move(edge: .leading),
+                                removal: .move(edge: .leading)
+                            )
+                        )
                 }
             }
+            .frame(maxWidth: .infinity)
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: currentPanel)
             
             // Navigation dots - 3 dots now
             HStack(spacing: 4) {
@@ -145,27 +168,21 @@ struct StatusSectionView: View {
                 
                 Spacer()
                 
-                // Help/Info button
-                Button(action: {
-                    // Show tooltip about settings
-                    showPomodoroSettings = true
-                }) {
-                    Image(systemName: "gearshape.circle.fill")
-                        .font(.headline)
-                        .foregroundColor(ThemeColors.primaryAccent)
-                        .overlay(
-                            Circle()
-                                .stroke(ThemeColors.primaryAccent.opacity(0.7), lineWidth: 1.5)
-                                .scaleEffect(1.3)
-                        )
-                }
-                .padding(.trailing, 8)
-                
-                // History button
+                // History button (now first)
                 Button(action: {
                     showPomodoroHistory = true
                 }) {
                     Image(systemName: "clock.arrow.circlepath")
+                        .font(.headline)
+                        .foregroundColor(ThemeColors.secondaryText)
+                }
+                .padding(.trailing, 8)
+                
+                // Settings button (now second)
+                Button(action: {
+                    showPomodoroSettings = true
+                }) {
+                    Image(systemName: "gearshape")
                         .font(.headline)
                         .foregroundColor(ThemeColors.secondaryText)
                 }
@@ -175,23 +192,35 @@ struct StatusSectionView: View {
             .padding(.top, 4)
             .background(ThemeColors.panelBackground.opacity(0.3))
 
-            // Fixed Content Area
-            VStack(spacing: 12) {
+            // Fixed Content Area with proper spacing
+            VStack(spacing: 0) {
                 // Timer display
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     // Timer circle
                     ZStack {
+                        // Background circle
                         Circle()
-                            .stroke(ThemeColors.secondaryText.opacity(0.2), lineWidth: 4)
+                            .stroke(ThemeColors.secondaryText.opacity(0.2), lineWidth: 6)
                             .frame(width: 150, height: 150)
                         
+                        // Progress circle with glow
                         Circle()
                             .trim(from: 0, to: pomodoroViewModel.progress)
-                            .stroke(timerColor(), lineWidth: 4)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [timerColor(), timerColor().opacity(0.7)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ),
+                                style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                            )
                             .frame(width: 150, height: 150)
                             .rotationEffect(.degrees(-90))
+                            .shadow(color: timerColor().opacity(pomodoroViewModel.progress > 0.7 ? (pomodoroViewModel.progress - 0.7) / 0.3 * 0.8 : 0), 
+                                    radius: pomodoroViewModel.progress > 0.7 ? 5 * (pomodoroViewModel.progress - 0.7) / 0.3 : 0)
                         
-                        VStack {
+                        // Timer text
+                        VStack(spacing: 4) {
                             Text(pomodoroViewModel.timeRemainingFormatted)
                                 .font(.system(size: 36, weight: .bold, design: .monospaced))
                                 .foregroundColor(ThemeColors.primaryText)
@@ -201,12 +230,13 @@ struct StatusSectionView: View {
                                 .foregroundColor(ThemeColors.secondaryText)
                         }
                     }
-                    .padding(.top, 8)
+                    .padding(.top, 20)
                     
                     // Session type
                     Text(pomodoroViewModel.currentSession.rawValue)
                         .font(.headline)
                         .foregroundColor(timerColor())
+                        .padding(.top, 4)
                     
                     // Control buttons
                     HStack(spacing: 30) {
@@ -234,86 +264,108 @@ struct StatusSectionView: View {
                                 .foregroundColor(ThemeColors.secondaryText)
                         }
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 12)
                 }
                 
-                Divider()
-                    .background(ThemeColors.secondaryText.opacity(0.3))
-                    .padding(.horizontal)
-                
-                // Notes Section
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Session Notes")
-                        .font(.subheadline)
-                        .foregroundColor(ThemeColors.secondaryText)
-                    
-                    TextField("What are you working on?", text: $pomodoroViewModel.sessionNotes)
-                        .font(.subheadline)
-                        .padding(8)
-                        .background(ThemeColors.panelBackground.opacity(0.6))
-                        .cornerRadius(8)
-                }
-                .padding(.horizontal)
-                
-                // Actions Row: Task Complete + Settings
-                HStack {
-                    // Task Complete Button
-                    Button(action: {
-                        pomodoroViewModel.saveCompletedSession(taskCompleted: true)
-                    }) {
-                        HStack {
-                            Image(systemName: "checkmark.circle")
-                            Text("Complete")
-                        }
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                // Show divider only during work mode
+                if pomodoroViewModel.currentMode == .work {
+                    Divider()
+                        .background(ThemeColors.secondaryText.opacity(0.3))
+                        .padding(.horizontal)
                         .padding(.vertical, 8)
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(ThemeColors.success.opacity(0.2))
-                        )
-                        .foregroundColor(ThemeColors.success)
+                }
+                
+                // Combined Notes and Complete Action Row
+                HStack(alignment: .center, spacing: 10) { // Use HStack
+                    // Notes TextField (Show only during work mode)
+                    if pomodoroViewModel.currentMode == .work {
+                        TextField("What are you working on?", text: $pomodoroViewModel.sessionNotes)
+                            .font(.subheadline)
+                            .padding(8)
+                            .background(ThemeColors.panelBackground.opacity(0.6))
+                            .cornerRadius(8)
+                            .frame(maxWidth: .infinity) // Allow TextField to expand
                     }
                     
-                    // Settings button
-                    Button(action: {
-                        showPomodoroSettings = true
-                    }) {
-                        HStack {
-                            Image(systemName: "gearshape")
-                            Text("Timer Settings")
+                    // Compact Complete Button (Icon only) - Show only during work mode
+                    if pomodoroViewModel.currentMode == .work {
+                        Button(action: {
+                            // Set completed state before saving
+                            pomodoroViewModel.taskCompleted = true
+                            
+                            // Trigger save and visual feedback
+                            pomodoroViewModel.saveCompletedSession() // No longer needs parameter
+                            showGreenCheck = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                                pomodoroViewModel.skipToNext() // Execute mode switch AFTER delay
+                                withAnimation { // Optional: Add animation for fade
+                                    showGreenCheck = false
+                                    // Let view model handle state reset in switchMode/timerFinished
+                                }
+                            }
+                        }) {
+                            // Determine button content based on state
+                            Group { // Use Group for conditional content
+                                if showGreenCheck {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(ThemeColors.success)
+                                } else if pomodoroViewModel.dailyCompletedFocusSessions > 0 { // Use renamed counter
+                                    ZStack {
+                                        Circle().fill(ThemeColors.secondaryText.opacity(0.3))
+                                        Text("\(pomodoroViewModel.dailyCompletedFocusSessions)") // Use renamed counter
+                                            .font(.caption) // Smaller font for number
+                                            .fontWeight(.bold)
+                                            .foregroundColor(ThemeColors.secondaryText)
+                                    }
+                                } else {
+                                    Image(systemName: "circle")
+                                        .foregroundColor(ThemeColors.secondaryText)
+                                }
+                            }
+                            .font(.title2) // Apply font size to the Group
+                            .frame(width: 28, height: 28) // Give the icon area a fixed size
                         }
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .padding(.vertical, 8)
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(ThemeColors.primaryAccent.opacity(0.2))
-                        )
-                        .foregroundColor(ThemeColors.primaryAccent)
+                        .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal)
-                .padding(.bottom, 16)
+                .padding(.horizontal) // Padding for the HStack
+                .padding(.top, 4)
+                .padding(.bottom, 16) // Bottom padding for the row
             }
-            .padding(.top, 8)
-            .frame(height: 290)
+            .padding(.top, 4)
+            .frame(height: 340)
         }
+        .padding(.horizontal)
         .background(ThemeColors.panelBackground.opacity(0.3))
         .clipShape(RoundedRectangle(cornerRadius: 15))
         .overlay(
             RoundedRectangle(cornerRadius: 15)
                 .stroke(ThemeColors.primaryAccent.opacity(0.3), lineWidth: 1)
         )
-        .padding(.horizontal)
         .sheet(isPresented: $showPomodoroSettings) {
             PomodoroSettingsView(pomodoroViewModel: pomodoroViewModel)
         }
         .sheet(isPresented: $showPomodoroHistory) {
             PomodoroHistoryView()
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            // Only check status when app comes back to foreground
+            if pomodoroViewModel.isRunning {
+                pomodoroViewModel.checkTimerStatus()
+            }
+        }
+        // Action: Add onChange to trigger animation on timer completion
+        .onChange(of: pomodoroViewModel.timeRemaining) { newValue in
+            if newValue <= 0 && pomodoroViewModel.currentMode == .work && !pomodoroViewModel.isRunning {
+                 // Timer just finished a work session naturally
+                 showGreenCheck = true
+                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                     withAnimation {
+                         showGreenCheck = false
+                     }
+                 }
+             }
+         }
     }
     
     // Helper function for timer color
@@ -322,9 +374,9 @@ struct StatusSectionView: View {
         case .focus:
             return ThemeColors.primaryAccent
         case .shortBreak:
-            return ThemeColors.secondaryAccent
+            return ThemeColors.warning // Changed from secondaryAccent to warning (orange)
         case .longBreak:
-            return ThemeColors.success
+            return ThemeColors.success // This is already green - keeping as is
         }
     }
     
@@ -426,13 +478,13 @@ struct StatusSectionView: View {
             .padding(.top, 8)
             .frame(height: 320)
         }
+        .padding(.horizontal)
         .background(ThemeColors.panelBackground.opacity(0.3))
         .clipShape(RoundedRectangle(cornerRadius: 15))
         .overlay(
             RoundedRectangle(cornerRadius: 15)
                 .stroke(ThemeColors.primaryAccent.opacity(0.3), lineWidth: 1)
         )
-        .padding(.horizontal)
     }
     
     // Status panel content
@@ -516,13 +568,13 @@ struct StatusSectionView: View {
             )
             .padding(12)
         }
+        .padding(.horizontal)
         .background(ThemeColors.panelBackground.opacity(0.3))
         .clipShape(RoundedRectangle(cornerRadius: 15))
         .overlay(
             RoundedRectangle(cornerRadius: 15)
                 .stroke(ThemeColors.primaryAccent.opacity(0.3), lineWidth: 1)
         )
-        .padding(.horizontal)
     }
 }
 
