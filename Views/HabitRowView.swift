@@ -11,6 +11,7 @@ struct HabitRowView: View {
     @State private var isCompletedToday = false
     let themeAccentColor = ThemeColors.primaryAccent
     let streakColor = ThemeColors.warning
+    var isMultiSelectMode: Bool = false // Add flag for multi-select mode
 
     // Define background color for the row panel
     let panelBackgroundColor = ThemeColors.panelBackground // Use the standard panel background
@@ -33,22 +34,24 @@ struct HabitRowView: View {
             Spacer()
             
             // Right side: Completion circle
-            Button(action: {
-                if !isCompletedToday {
-                    onComplete(habit)
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        isCompletedToday = true
+            if !isMultiSelectMode {
+                Button(action: {
+                    if !isCompletedToday {
+                        onComplete(habit)
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            isCompletedToday = true
+                        }
                     }
+                }) {
+                    Circle()
+                        .stroke(isCompletedToday ? ThemeColors.success : ThemeColors.primaryAccent, lineWidth: 2)
+                        .frame(width: 24, height: 24)
+                        .overlay(
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(isCompletedToday ? ThemeColors.success : Color.clear)
+                        )
                 }
-            }) {
-                Circle()
-                    .stroke(isCompletedToday ? ThemeColors.success : ThemeColors.primaryAccent, lineWidth: 2)
-                    .frame(width: 24, height: 24)
-                    .overlay(
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(isCompletedToday ? ThemeColors.success : Color.clear)
-                    )
             }
         }
         .padding()

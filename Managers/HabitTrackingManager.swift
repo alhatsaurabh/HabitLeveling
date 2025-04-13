@@ -10,7 +10,10 @@ extension Notification.Name {
     // Add other app-wide notification names here if desired
     // static let didPerformReset = Notification.Name("didPerformReset")
     // static let didUpdateUserProfile = Notification.Name("didUpdateUserProfile")
-
+    static let habitStatusChanged = Notification.Name("habitStatusChanged")
+    static let habitStatsChanged = Notification.Name("habitStatsChanged")
+    static let habitAdded = Notification.Name("habitAdded")
+    static let habitCompleted = Notification.Name("habitCompleted")
 }
 // --- END DEFINITIONS ---
 
@@ -48,6 +51,12 @@ class HabitTrackingManager {
 
         // --- Save Changes ---
         PersistenceController.shared.saveContext()
+        
+        // --- Post Notification for Calendar Update ---
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .habitCompleted, object: nil, userInfo: ["habitID": habit.id?.uuidString ?? ""])
+        }
+        
         print("Habit completion and related updates saved.")
     }
 

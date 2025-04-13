@@ -86,7 +86,7 @@ HabitLeveling is a gamified habit tracking app with RPG elements including level
   - [ ] Create achievement showcase for completed progress
 
 ## Next Development Focus
-With the Smart Calendar feature now complete, we're ready to move forward with the Pomodoro Timer implementation as our next priority feature.
+With the Smart Calendar feature now complete, we're moving forward with the Narrative Gamification features (shelter-building system, shop, and character mechanics) as our next priority. The Pomodoro Timer feature has significant implementation progress but will be fully completed in a later phase.
 
 ## Feature Details
 

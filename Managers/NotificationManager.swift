@@ -23,24 +23,39 @@ class NotificationManager: NSObject, ObservableObject { // Inherit from NSObject
     @Published var currentNotification: InAppNotification?
     private var notificationTimer: Timer?
     
-    struct InAppNotification: Identifiable {
+    struct InAppNotification: Identifiable, Equatable {
         let id = UUID()
         let title: String
         let message: String
         let type: NotificationType
         let duration: TimeInterval
         
-        enum NotificationType {
+        enum NotificationType: Equatable {
             case success
             case warning
             case error
             case info
         }
+        
+        // Implement Equatable protocol
+        static func == (lhs: InAppNotification, rhs: InAppNotification) -> Bool {
+            return lhs.id == rhs.id &&
+                   lhs.title == rhs.title &&
+                   lhs.message == rhs.message &&
+                   lhs.type == rhs.type &&
+                   lhs.duration == rhs.duration
+        }
     }
     
     func showInAppNotification(title: String, message: String, type: InAppNotification.NotificationType = .info, duration: TimeInterval = 3.0) {
         DispatchQueue.main.async {
-            self.currentNotification = InAppNotification(title: title, message: message, type: type, duration: duration)
+            // Create the notification
+            let notification = InAppNotification(title: title, message: message, type: type, duration: duration)
+            
+            // Apply animation when showing
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                self.currentNotification = notification
+            }
             
             // Cancel any existing timer
             self.notificationTimer?.invalidate()

@@ -60,14 +60,37 @@ struct InAppNotificationContainer: View {
     
     var body: some View {
         ZStack {
-            if let notification = notificationManager.currentNotification {
+            // Show notification only when it exists
+            if notificationManager.currentNotification != nil {
                 VStack {
                     Spacer()
-                    InAppNotificationView(notification: notification)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    if let notification = notificationManager.currentNotification {
+                        InAppNotificationView(notification: notification)
+                    }
                 }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: notificationManager.currentNotification)
+        // Note: We're avoiding the animation modifier here
+        // Animation is applied in the NotificationManager class instead
+    }
+}
+
+// Preview for the notification system
+struct InAppNotificationView_Previews: PreviewProvider {
+    static var previews: some View {
+        ZStack {
+            Color.black.opacity(0.8).edgesIgnoringSafeArea(.all)
+            
+            InAppNotificationView(notification: 
+                NotificationManager.InAppNotification(
+                    title: "Congratulations!",
+                    message: "You've completed your daily quest.",
+                    type: .success,
+                    duration: 3.0
+                )
+            )
+            .padding(.horizontal)
+        }
     }
 } 

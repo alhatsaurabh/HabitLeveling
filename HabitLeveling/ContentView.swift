@@ -10,11 +10,6 @@ struct ContentView: View {
                     Label("Dashboard", systemImage: "house.fill")
                 }
             
-            HabitListView()
-                .tabItem {
-                    Label("Habits", systemImage: "list.bullet")
-                }
-            
             GatesView()
                 .tabItem {
                     Label("Gates", systemImage: "shield.lefthalf.filled.slash")

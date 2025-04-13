@@ -54,8 +54,8 @@ struct StatusSectionView: View {
                     statusPanel
                         .transition(
                             .asymmetric(
-                                insertion: .move(edge: currentPanel == .pomodoro ? .trailing : .leading),
-                                removal: .move(edge: currentPanel == .pomodoro ? .trailing : .leading)
+                                insertion: .move(edge: .trailing), // Come in from right when moving from pomodoro
+                                removal: .move(edge: .leading) // Exit to left when moving to calendar
                             )
                         )
                 } else if currentPanel == .calendar {
@@ -63,17 +63,17 @@ struct StatusSectionView: View {
                     calendarPanel
                         .transition(
                             .asymmetric(
-                                insertion: .move(edge: .trailing),
-                                removal: .move(edge: .trailing)
+                                insertion: .move(edge: .trailing), // Come in from right when moving from status
+                                removal: .move(edge: .trailing) // Exit to right when moving back to status
                             )
                         )
-                } else {
+                } else if currentPanel == .pomodoro {
                     // Show pomodoro panel
                     pomodoroPanel
                         .transition(
                             .asymmetric(
-                                insertion: .move(edge: .leading),
-                                removal: .move(edge: .leading)
+                                insertion: .move(edge: .leading), // Come in from left when moving from status
+                                removal: .move(edge: .trailing) // Exit to right when moving back to status
                             )
                         )
                 }
@@ -81,7 +81,7 @@ struct StatusSectionView: View {
             .frame(maxWidth: .infinity)
             .animation(.spring(response: 0.4, dampingFraction: 0.8), value: currentPanel)
             
-            // Navigation dots - 3 dots now
+            // Navigation dots - 3 dots for panel indicator
             HStack(spacing: 4) {
                 Circle()
                     .fill(currentPanel == .pomodoro ? ThemeColors.primaryAccent : ThemeColors.secondaryText.opacity(0.7))
@@ -93,7 +93,7 @@ struct StatusSectionView: View {
                     .fill(currentPanel == .calendar ? ThemeColors.primaryAccent : ThemeColors.secondaryText.opacity(0.7))
                     .frame(width: currentPanel == .calendar ? 6 : 4, height: currentPanel == .calendar ? 6 : 4)
             }
-            .padding(.top, 8)
+            .padding(.vertical, 8)
         }
         .gesture(
             DragGesture()

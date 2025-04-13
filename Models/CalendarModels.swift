@@ -1,6 +1,6 @@
 import Foundation
 
-@objc public class CalendarDay: NSObject, Identifiable {
+public struct CalendarDay: Identifiable {
     public let id = UUID()
     public let date: Date
     public let isCurrentMonth: Bool
@@ -13,11 +13,10 @@ import Foundation
         return "\(day)"
     }
     
-    @objc public init(date: Date, isCurrentMonth: Bool, isToday: Bool, isSelected: Bool = false) {
+    public init(date: Date, isCurrentMonth: Bool, isToday: Bool, isSelected: Bool = false) {
         self.date = date
         self.isCurrentMonth = isCurrentMonth
         self.isToday = isToday
         self.isSelected = isSelected
-        super.init()
     }
 } 

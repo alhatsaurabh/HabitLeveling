@@ -11,6 +11,9 @@ struct ActiveQuestsSectionView: View {
     var onAddTapped: () -> Void
     @Binding var habitToEdit: Habit?
     
+    // Environment
+    @Environment(\.managedObjectContext) private var viewContext
+    
     @State private var selectedCategory: StatCategory? // nil represents "All"
     
     private var filteredHabits: [Habit] {
@@ -47,7 +50,7 @@ struct ActiveQuestsSectionView: View {
             .padding(.horizontal)
             .padding(.top)
             
-            // Category Filter
+            // Category Filter - now scrollable
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     FilterButton(
@@ -66,12 +69,21 @@ struct ActiveQuestsSectionView: View {
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 12)
+                .fixedSize(horizontal: false, vertical: true)
             }
             .background(ThemeColors.panelBackground.opacity(0.2))
             
             // Habits List
             if filteredHabits.isEmpty {
-                emptyStateView
+                // Display empty state inside a List to maintain consistent layout
+                List {
+                    emptyStateView
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .listRowSeparator(.hidden)
+                }
+                .listStyle(.plain)
+                .frame(minHeight: 150) // Reduced from 200 to 150 for better proportions
             } else {
                 List {
                     ForEach(filteredHabits) { habit in
@@ -99,6 +111,7 @@ struct ActiveQuestsSectionView: View {
                     }
                 }
                 .listStyle(.plain)
+                .frame(minHeight: 150) // Reduced from 200 to 150 for better proportions
             }
         }
     }
@@ -106,7 +119,7 @@ struct ActiveQuestsSectionView: View {
     private var emptyStateView: some View {
         VStack(spacing: 12) {
             Image(systemName: "scroll")
-                .font(.system(size: 40))
+                .font(.system(size: 60))
                 .foregroundColor(ThemeColors.secondaryText.opacity(0.7))
             Text("No active quests")
                 .font(.headline)

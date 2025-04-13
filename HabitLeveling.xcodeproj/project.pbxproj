@@ -94,7 +94,10 @@
 				HabitListView.swift,
 				HabitRowView.swift,
 				HabitTemplatePickerView.swift,
+				InAppNotificationView.swift,
 				LevelUpView.swift,
+				PomodoroHistoryView.swift,
+				PomodoroSettingsView.swift,
 				SettingsView.swift,
 				StatDistributionBarView.swift,
 				StatsRadarChartView.swift,
@@ -117,19 +120,6 @@
 			);
 			target = 0989FC0B2D9C176200729503 /* HabitLeveling */;
 		};
-		0989FC8A2D9CA11F00729503 /* Exceptions for "Managers" folder in "HabitLevelingUITests" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				EssenceCoreManager.swift,
-				GateManager.swift,
-				HabitTrackingManager.swift,
-				LevelingManager.swift,
-				NotificationManager.swift,
-				ResetManager.swift,
-				StatsManager.swift,
-			);
-			target = 0989FC272D9C176400729503 /* HabitLevelingUITests */;
-		};
 		0989FC8C2D9CA15200729503 /* Exceptions for "ViewModels" folder in "HabitLeveling" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -139,6 +129,7 @@
 				HabitListViewModel.swift,
 				HabitTemplate.swift,
 				HabitTemplateProvider.swift,
+				PomodoroViewModel.swift,
 				StatsViewModel.swift,
 			);
 			target = 0989FC0B2D9C176200729503 /* HabitLeveling */;
@@ -151,6 +142,7 @@
 				AvailableSanctumItem.swift,
 				ContentView.swift,
 				HabitLevelingApp.swift,
+				Models/CalendarModels.swift,
 				Persistence.swift,
 			);
 			target = 0989FC0B2D9C176200729503 /* HabitLeveling */;
@@ -190,7 +182,6 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				0989FC892D9CA11F00729503 /* Exceptions for "Managers" folder in "HabitLeveling" target */,
-				0989FC8A2D9CA11F00729503 /* Exceptions for "Managers" folder in "HabitLevelingUITests" target */,
 			);
 			path = Managers;
 			sourceTree = "<group>";

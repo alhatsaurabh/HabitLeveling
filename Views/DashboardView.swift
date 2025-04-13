@@ -51,27 +51,30 @@ struct DashboardView: View {
     // MARK: - Body
     var body: some View {
         NavigationView {
-            mainContent // Use the computed property for the main content
-                .background(ThemeColors.background.ignoresSafeArea())
-                .overlay(alignment: .center) { levelUpOverlayContent } // Use computed property
-                .overlay(alignment: .center) { artifactEarnedOverlayContent } // Use computed property
-                .navigationTitle("Dashboard")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar { navigationToolbarContent } // Use computed property
-                .onAppear { viewModel.fetchAllData() }
-                .confirmationDialog("Add New Quest", isPresented: $showingAddHabitOptions, titleVisibility: .visible) {
-                    Button("Choose from Template") { self.showingTemplatePicker = true }
-                    Button("Create Custom Habit") { self.sheetToShow = .custom }
-                    Button("Cancel", role: .cancel) { }
-                } message: { Text("Select a method to add a new quest.") }
-                // --- Sheet Presenters ---
-                .sheet(isPresented: $showingStatsSheet) { StatsView() }
-                .sheet(isPresented: $showingTemplatePicker) { templatePickerSheet } // Use computed property
-                .sheet(item: $sheetToShow, onDismiss: { viewModel.fetchHabits() }) { sheetContent(for: $0) } // Use helper func
-                .sheet(item: $habitToEdit, onDismiss: { viewModel.fetchHabits() }) { editSheetContent(for: $0) } // Use helper func
-                // --- .onReceive modifiers ---
-                .onReceive(viewModel.levelUpSubject) { level in handleLevelUp(level) } // Use helper func
-                .onReceive(NotificationCenter.default.publisher(for: .didEarnArtifact)) { notification in handleArtifactEarned(notification) } // Use helper func
+            ZStack { // Use ZStack for layering
+                ThemeColors.background.ignoresSafeArea() // Layer 1: Background, edge-to-edge
+
+                mainContent // Layer 2: Content, respects safe areas
+            }
+            .overlay(alignment: .center) { levelUpOverlayContent } // Apply modifiers to ZStack
+            .overlay(alignment: .center) { artifactEarnedOverlayContent } // Apply modifiers to ZStack
+            .navigationTitle("Dashboard")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { navigationToolbarContent }
+            .onAppear { viewModel.fetchAllData() }
+            .confirmationDialog("Add New Quest", isPresented: $showingAddHabitOptions, titleVisibility: .visible) {
+                Button("Choose from Template") { self.showingTemplatePicker = true }
+                Button("Create Custom Habit") { self.sheetToShow = .custom }
+                Button("Cancel", role: .cancel) { }
+            } message: { Text("Select a method to add a new quest.") }
+            // --- Sheet Presenters --- Applied to ZStack
+            .sheet(isPresented: $showingStatsSheet) { StatsView() }
+            .sheet(isPresented: $showingTemplatePicker) { templatePickerSheet }
+            .sheet(item: $sheetToShow, onDismiss: { viewModel.fetchHabits() }) { sheetContent(for: $0) }
+            .sheet(item: $habitToEdit, onDismiss: { viewModel.fetchHabits() }) { editSheetContent(for: $0) }
+            // --- .onReceive modifiers --- Applied to ZStack
+            .onReceive(viewModel.levelUpSubject) { level in handleLevelUp(level) }
+            .onReceive(NotificationCenter.default.publisher(for: .didEarnArtifact)) { notification in handleArtifactEarned(notification) }
         }
         .tint(themeAccentColor)
     }
@@ -82,15 +85,18 @@ struct DashboardView: View {
     @ViewBuilder private var mainContent: some View {
         VStack(alignment: .leading, spacing: 0) {
             StatusSectionView(viewModel: viewModel)
-                .padding(.bottom, 15)
+                .padding(.bottom, 15) // Keep spacing between sections
 
             ActiveQuestsSectionView(
                 viewModel: viewModel,
                 onAddTapped: { self.showingAddHabitOptions = true },
                 habitToEdit: $habitToEdit
             )
+            // No explicit bottom padding here, let safe area handle it
+
             Spacer() // Pushes content to the top
         }
+        // .background(ThemeColors.background) // REMOVE background from VStack
     }
 
     /// The content for the level up overlay.
@@ -198,10 +204,7 @@ struct DashboardView_Previews: PreviewProvider {
     struct LevelUpView: View { var level: Int; var body: some View { Text("Level Up! \(level)").foregroundColor(.white) } }
     struct ArtifactEarnedView: View { var artifactName: String; var body: some View { Text("Got \(artifactName)").foregroundColor(.white) } }
     struct StatsView: View { var body: some View { Text("Stats View Placeholder").foregroundColor(.white) } }
-    struct HabitTemplatePickerView: View { var onTemplateSelected: (HabitTemplate) -> Void; var body: some View { Text("Template Picker Placeholder").foregroundColor(.white) } }
-    struct AddEditHabitView: View { init(habitToEdit: Habit? = nil, template: HabitTemplate? = nil) {} ; var body: some View { Text("Add/Edit Placeholder").foregroundColor(.white) } }
-    // Mock HabitTemplate if needed
-    struct HabitTemplate: Identifiable { let id = UUID(); var name: String = "T"}
+    // Removed duplicate declarations that conflict with the real implementations
     // Mock DashboardViewModel if needed
     class MockDashboardViewModel: DashboardViewModel { }
 

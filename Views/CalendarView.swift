@@ -5,6 +5,210 @@
 import SwiftUI
 import CoreData
 
+// MARK: - CalendarViewModel
+class CalendarViewModel: ObservableObject {
+    @Published var currentDate = Date()
+    @Published var selectedDay: CalendarDay?
+    @Published var completionsForSelectedDay: [String]? = nil
+    @Published var allCompletions: [Date: [String]] = [:]
+    @Published var maxCompletionsPerDay: Int = 1 // For heat map intensity calculation
+    @Published var totalCompletions: Int = 0
+    @Published var mostActiveDay: (String, String) = ("0", "Day") // (count, day name)
+    
+    private var calendar = Calendar.current
+    
+    var currentMonthTitle: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: currentDate)
+    }
+    
+    var weekdaySymbols: [String] {
+        calendar.veryShortWeekdaySymbols
+    }
+    
+    var days: [CalendarDay] {
+        let monthInterval = calendar.dateInterval(of: .month, for: currentDate)!
+        let monthFirstWeekday = calendar.component(.weekday, from: monthInterval.start)
+        let daysInMonth = calendar.range(of: .day, in: .month, for: currentDate)!.count
+        
+        var days: [CalendarDay] = []
+        
+        // Add days from previous month
+        let previousMonth = calendar.date(byAdding: .month, value: -1, to: currentDate)!
+        let daysInPreviousMonth = calendar.range(of: .day, in: .month, for: previousMonth)!.count
+        var previousMonthStartDay = daysInPreviousMonth - monthFirstWeekday + 2
+        if previousMonthStartDay > daysInPreviousMonth {
+            previousMonthStartDay = previousMonthStartDay - 7
+        }
+        
+        for day in previousMonthStartDay...daysInPreviousMonth {
+            let date = calendar.date(from: DateComponents(year: calendar.component(.year, from: previousMonth),
+                                                        month: calendar.component(.month, from: previousMonth),
+                                                        day: day))!
+            days.append(CalendarDay(
+                date: date,
+                isCurrentMonth: false,
+                isToday: calendar.isDateInToday(date)
+            ))
+        }
+        
+        // Add days from current month
+        for day in 1...daysInMonth {
+            let date = calendar.date(from: DateComponents(year: calendar.component(.year, from: currentDate),
+                                                        month: calendar.component(.month, from: currentDate),
+                                                        day: day))!
+            days.append(CalendarDay(
+                date: date,
+                isCurrentMonth: true,
+                isToday: calendar.isDateInToday(date),
+                isSelected: selectedDay?.date != nil && calendar.isDate(date, inSameDayAs: selectedDay!.date)
+            ))
+        }
+        
+        // Add days from next month to complete the grid
+        let remainingDays = 42 - days.count // 6 rows * 7 days
+        let nextMonth = calendar.date(byAdding: .month, value: 1, to: currentDate)!
+        for day in 1...remainingDays {
+            let date = calendar.date(from: DateComponents(year: calendar.component(.year, from: nextMonth),
+                                                        month: calendar.component(.month, from: nextMonth),
+                                                        day: day))!
+            days.append(CalendarDay(
+                date: date,
+                isCurrentMonth: false,
+                isToday: calendar.isDateInToday(date)
+            ))
+        }
+        
+        return days
+    }
+    
+    func previousMonth() {
+        currentDate = calendar.date(byAdding: .month, value: -1, to: currentDate)!
+    }
+    
+    func nextMonth() {
+        currentDate = calendar.date(byAdding: .month, value: 1, to: currentDate)!
+    }
+    
+    func selectDay(_ day: CalendarDay, context: NSManagedObjectContext) {
+        // Update selected day
+        if let selectedDay = selectedDay, calendar.isDate(selectedDay.date, inSameDayAs: day.date) {
+            self.selectedDay = nil
+            self.completionsForSelectedDay = nil
+        } else {
+            self.selectedDay = day
+        loadCompletions(for: day.date, context: context)
+        }
+    }
+    
+    func loadAllCompletions(context: NSManagedObjectContext) {
+        allCompletions = [:]
+        
+        let fetchRequest: NSFetchRequest<HabitLog> = HabitLog.fetchRequest()
+        
+        do {
+            let logs = try context.fetch(fetchRequest)
+            var dateCompletions: [Date: [String]] = [:]
+            var dateCount: [Date: Int] = [:]
+            var totalCount = 0
+            
+            for log in logs {
+                guard let completionDate = log.completionDate, let habitID = log.habitID else { continue }
+                
+                // Get the start of day for the completion date
+                let startOfDay = calendar.startOfDay(for: completionDate)
+                
+                // Fetch habit name
+                let habitFetchRequest: NSFetchRequest<Habit> = Habit.fetchRequest()
+                habitFetchRequest.predicate = NSPredicate(format: "id == %@", habitID as CVarArg)
+                habitFetchRequest.fetchLimit = 1
+                
+                if let habits = try? context.fetch(habitFetchRequest), let habit = habits.first, let habitName = habit.name {
+                    // Add to date completions
+                    if var completions = dateCompletions[startOfDay] {
+                        completions.append(habitName)
+                        dateCompletions[startOfDay] = completions
+                    } else {
+                        dateCompletions[startOfDay] = [habitName]
+                    }
+                    
+                    // Update count
+                    dateCount[startOfDay] = (dateCount[startOfDay] ?? 0) + 1
+                    totalCount += 1
+                }
+            }
+            
+            // Find max completions per day
+            let maxCompletions = dateCount.values.max() ?? 1
+            self.maxCompletionsPerDay = max(maxCompletions, 1) // Avoid division by zero
+            
+            // Find most active day
+            if let (mostActiveDate, count) = dateCount.max(by: { $0.value < $1.value }) {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "EEEE"
+                let dayName = formatter.string(from: mostActiveDate)
+                self.mostActiveDay = ("\(count)", dayName)
+            } else {
+                self.mostActiveDay = ("0", "None")
+            }
+            
+            self.allCompletions = dateCompletions
+            self.totalCompletions = totalCount
+            
+        } catch {
+            print("Error loading all completions: \(error)")
+        }
+    }
+    
+    func updateCompletions(for category: String?, context: NSManagedObjectContext) {
+        loadAllCompletions(context: context)
+        if let selectedDay = selectedDay {
+            loadCompletions(for: selectedDay.date, context: context, category: category)
+        }
+    }
+    
+    private func loadCompletions(for date: Date, context: NSManagedObjectContext, category: String? = nil) {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        let fetchRequest: NSFetchRequest<HabitLog> = HabitLog.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "completionDate >= %@ AND completionDate < %@", startOfDay as NSDate, endOfDay as NSDate)
+        
+        do {
+            let logs = try context.fetch(fetchRequest)
+            let habitIDs = logs.compactMap { $0.habitID }
+            
+            var habitFetchRequest: NSFetchRequest<Habit> = Habit.fetchRequest()
+            
+            if let category = category {
+                habitFetchRequest.predicate = NSPredicate(format: "id IN %@ AND statCategory == %@", habitIDs, category)
+            } else {
+            habitFetchRequest.predicate = NSPredicate(format: "id IN %@", habitIDs)
+            }
+            
+            let habits = try context.fetch(habitFetchRequest)
+            completionsForSelectedDay = habits.map { habit in
+                habit.name ?? "Unknown Habit"
+            }
+        } catch {
+            print("Error loading completions: \(error)")
+            completionsForSelectedDay = nil
+        }
+    }
+    
+    func completionIntensity(for date: Date) -> Double {
+        let startOfDay = calendar.startOfDay(for: date)
+        
+        if let completions = allCompletions[startOfDay], !completions.isEmpty {
+            return Double(completions.count) / Double(maxCompletionsPerDay)
+        }
+        return 0.0
+    }
+}
+
+// MARK: - CalendarView
 struct CalendarView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
@@ -140,20 +344,25 @@ struct CalendarView: View {
                             }
                             
                             if let completions = viewModel.completionsForSelectedDay, !completions.isEmpty {
-                                ForEach(completions, id: \.self) { completion in
-                                    HStack {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(.green)
-                                        Text(completion)
-                                            .foregroundColor(ThemeColors.secondaryText)
-                                        
-                                        Spacer()
-                                        
-                                        Image(systemName: categoryIcon(for: completion))
-                                            .foregroundColor(categoryColor(for: completion))
+                                ScrollView {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        ForEach(completions, id: \.self) { completion in
+                                            HStack {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundColor(.green)
+                                                Text(completion)
+                                                    .foregroundColor(ThemeColors.secondaryText)
+                                                
+                                                Spacer()
+                                                
+                                                Image(systemName: categoryIcon(for: completion))
+                                                    .foregroundColor(categoryColor(for: completion))
+                                            }
+                                            .padding(.vertical, 4)
+                                        }
                                     }
-                                    .padding(.vertical, 4)
                                 }
+                                .frame(maxHeight: 200) // Limit the height of the scrollable area
                             } else {
                                 HStack {
                                     Image(systemName: "xmark.circle")
@@ -219,6 +428,7 @@ struct CalendarView: View {
     }
 }
 
+// MARK: - Supporting Views
 struct CategoryButton: View {
     let title: String
     let isSelected: Bool
@@ -246,6 +456,13 @@ struct CalendarDayView: View {
     
     var body: some View {
         ZStack {
+            // Background
+            RoundedRectangle(cornerRadius: 8)
+                .fill(
+                    day.isToday ? ThemeColors.secondaryAccent.opacity(0.3) :
+                    !day.isCurrentMonth ? ThemeColors.panelBackground.opacity(0.3) : Color.clear
+                )
+            
             // Heat map background
             if completionIntensity > 0 {
                 RoundedRectangle(cornerRadius: 8)
@@ -260,16 +477,9 @@ struct CalendarDayView: View {
             }
         }
         .frame(height: 40)
-        .background(
+        .overlay(
             RoundedRectangle(cornerRadius: 8)
                 .stroke(day.isSelected ? ThemeColors.primaryAccent : Color.clear, lineWidth: 2)
-                .background(
-                    day.isToday ? 
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(ThemeColors.secondaryAccent.opacity(0.3)) : 
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(day.isCurrentMonth ? Color.clear : ThemeColors.panelBackground.opacity(0.3))
-                )
         )
     }
     
@@ -297,221 +507,5 @@ struct CalendarDayView: View {
         } else {
             return Color.green.opacity(0.8)
         }
-    }
-}
-
-class CalendarViewModel: ObservableObject {
-    @Published var currentDate = Date()
-    @Published var selectedDay: CalendarDay?
-    @Published var completionsForSelectedDay: [String]? = nil
-    @Published var allCompletions: [Date: [String]] = [:]
-    @Published var maxCompletionsPerDay: Int = 1 // For heat map intensity calculation
-    @Published var totalCompletions: Int = 0
-    @Published var mostActiveDay: (String, String) = ("0", "Day") // (count, day name)
-    
-    private var calendar = Calendar.current
-    
-    var currentMonthTitle: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: currentDate)
-    }
-    
-    var weekdaySymbols: [String] {
-        calendar.veryShortWeekdaySymbols
-    }
-    
-    var days: [CalendarDay] {
-        let monthInterval = calendar.dateInterval(of: .month, for: currentDate)!
-        let monthFirstWeekday = calendar.component(.weekday, from: monthInterval.start)
-        let daysInMonth = calendar.range(of: .day, in: .month, for: currentDate)!.count
-        
-        var days: [CalendarDay] = []
-        
-        // Add days from previous month
-        let previousMonth = calendar.date(byAdding: .month, value: -1, to: currentDate)!
-        let daysInPreviousMonth = calendar.range(of: .day, in: .month, for: previousMonth)!.count
-        var previousMonthStartDay = daysInPreviousMonth - monthFirstWeekday + 2
-        if previousMonthStartDay > daysInPreviousMonth {
-            previousMonthStartDay = previousMonthStartDay - 7
-        }
-        
-        for day in previousMonthStartDay...daysInPreviousMonth {
-            let date = calendar.date(from: DateComponents(year: calendar.component(.year, from: previousMonth),
-                                                         month: calendar.component(.month, from: previousMonth),
-                                                         day: day))!
-            days.append(CalendarDay(
-                date: date,
-                isCurrentMonth: false,
-                isToday: calendar.isDateInToday(date)
-            ))
-        }
-        
-        // Add days from current month
-        for day in 1...daysInMonth {
-            let date = calendar.date(from: DateComponents(year: calendar.component(.year, from: currentDate),
-                                                         month: calendar.component(.month, from: currentDate),
-                                                         day: day))!
-            days.append(CalendarDay(
-                date: date,
-                isCurrentMonth: true,
-                isToday: calendar.isDateInToday(date),
-                isSelected: selectedDay?.date != nil && calendar.isDate(date, inSameDayAs: selectedDay!.date)
-            ))
-        }
-        
-        // Add days from next month to complete the grid
-        let remainingDays = 42 - days.count // 6 rows * 7 days
-        let nextMonth = calendar.date(byAdding: .month, value: 1, to: currentDate)!
-        for day in 1...remainingDays {
-            let date = calendar.date(from: DateComponents(year: calendar.component(.year, from: nextMonth),
-                                                         month: calendar.component(.month, from: nextMonth),
-                                                         day: day))!
-            days.append(CalendarDay(
-                date: date,
-                isCurrentMonth: false,
-                isToday: calendar.isDateInToday(date)
-            ))
-        }
-        
-        return days
-    }
-    
-    func previousMonth() {
-        currentDate = calendar.date(byAdding: .month, value: -1, to: currentDate)!
-    }
-    
-    func nextMonth() {
-        currentDate = calendar.date(byAdding: .month, value: 1, to: currentDate)!
-    }
-    
-    func selectDay(_ day: CalendarDay, context: NSManagedObjectContext) {
-        // Update selected day
-        if let selectedDay = selectedDay, calendar.isDate(selectedDay.date, inSameDayAs: day.date) {
-            self.selectedDay = nil
-            self.completionsForSelectedDay = nil
-        } else {
-            self.selectedDay = day
-            loadCompletions(for: day.date, context: context)
-        }
-    }
-    
-    func loadAllCompletions(context: NSManagedObjectContext) {
-        allCompletions = [:]
-        
-        let fetchRequest: NSFetchRequest<HabitLog> = HabitLog.fetchRequest()
-        
-        do {
-            let logs = try context.fetch(fetchRequest)
-            var dateCompletions: [Date: [String]] = [:]
-            var dateCount: [Date: Int] = [:]
-            var totalCount = 0
-            
-            for log in logs {
-                guard let completionDate = log.completionDate, let habitID = log.habitID else { continue }
-                
-                // Get the start of day for the completion date
-                let startOfDay = calendar.startOfDay(for: completionDate)
-                
-                // Fetch habit name
-                let habitFetchRequest: NSFetchRequest<Habit> = Habit.fetchRequest()
-                habitFetchRequest.predicate = NSPredicate(format: "id == %@", habitID as CVarArg)
-                habitFetchRequest.fetchLimit = 1
-                
-                if let habits = try? context.fetch(habitFetchRequest), let habit = habits.first, let habitName = habit.name {
-                    // Add to date completions
-                    if var completions = dateCompletions[startOfDay] {
-                        completions.append(habitName)
-                        dateCompletions[startOfDay] = completions
-                    } else {
-                        dateCompletions[startOfDay] = [habitName]
-                    }
-                    
-                    // Update count
-                    dateCount[startOfDay] = (dateCount[startOfDay] ?? 0) + 1
-                    totalCount += 1
-                }
-            }
-            
-            // Find max completions per day
-            let maxCompletions = dateCount.values.max() ?? 1
-            self.maxCompletionsPerDay = max(maxCompletions, 1) // Avoid division by zero
-            
-            // Find most active day
-            if let (mostActiveDate, count) = dateCount.max(by: { $0.value < $1.value }) {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "EEEE"
-                let dayName = formatter.string(from: mostActiveDate)
-                self.mostActiveDay = ("\(count)", dayName)
-            } else {
-                self.mostActiveDay = ("0", "None")
-            }
-            
-            self.allCompletions = dateCompletions
-            self.totalCompletions = totalCount
-            
-        } catch {
-            print("Error loading all completions: \(error)")
-        }
-    }
-    
-    func updateCompletions(for category: String?, context: NSManagedObjectContext) {
-        loadAllCompletions(context: context)
-        if let selectedDay = selectedDay {
-            loadCompletions(for: selectedDay.date, context: context, category: category)
-        }
-    }
-    
-    private func loadCompletions(for date: Date, context: NSManagedObjectContext, category: String? = nil) {
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: date)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-        
-        let fetchRequest: NSFetchRequest<HabitLog> = HabitLog.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "completionDate >= %@ AND completionDate < %@", startOfDay as NSDate, endOfDay as NSDate)
-        
-        do {
-            let logs = try context.fetch(fetchRequest)
-            let habitIDs = logs.compactMap { $0.habitID }
-            
-            var habitFetchRequest: NSFetchRequest<Habit> = Habit.fetchRequest()
-            
-            if let category = category {
-                habitFetchRequest.predicate = NSPredicate(format: "id IN %@ AND statCategory == %@", habitIDs, category)
-            } else {
-                habitFetchRequest.predicate = NSPredicate(format: "id IN %@", habitIDs)
-            }
-            
-            let habits = try context.fetch(habitFetchRequest)
-            completionsForSelectedDay = habits.map { habit in
-                habit.name ?? "Unknown Habit"
-            }
-        } catch {
-            print("Error loading completions: \(error)")
-            completionsForSelectedDay = nil
-        }
-    }
-    
-    func completionIntensity(for date: Date) -> Double {
-        let startOfDay = calendar.startOfDay(for: date)
-        
-        if let completions = allCompletions[startOfDay], !completions.isEmpty {
-            return Double(completions.count) / Double(maxCompletionsPerDay)
-        }
-        return 0.0
-    }
-}
-
-struct CalendarDay: Identifiable {
-    let id = UUID()
-    let date: Date
-    let isCurrentMonth: Bool
-    let isToday: Bool
-    var isSelected: Bool = false
-    
-    var number: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "d"
-        return formatter.string(from: date)
     }
 } 
